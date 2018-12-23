@@ -1,11 +1,15 @@
+//-------------------------------------------------------
 // Toonix Mesh
 //-------------------------------------------------------
+#ifndef TOONIX_MESH_H
+#define TOONIX_MESH_H
+
 #include "ToonixRegister.h"
 #include "ToonixGeometry.h"
 #include "ToonixLine.h"
+#include "ToonixUtils.h"
 
-#ifndef _TOONIX_MESH_H
-#define _TOONIX_MESH_H_
+
 
 // TXMesh Class
 //------------------------------------
@@ -35,7 +39,6 @@ public:
 	CVector3f m_view;
 
 	void AddPoint(LONG id, bool firstcap, bool hasnext, bool closed, ULONG chainsize);
-	void DirectionToRotation(CVector3f& in_dir, CVector3f& in_up);
 
 	void Build();
 

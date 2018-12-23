@@ -95,7 +95,7 @@ void TXMesh::AddPoint(LONG id, bool firstcap, bool hasnext, bool closed, ULONG c
 		
 	}
 
-	DirectionToRotation(tangent,up);
+	DirectionToRotation(m_matrix, tangent, up);
 	m_xf.SetRotationFromMatrix3(m_matrix);
 
 	m_offset.Normalize((*m_points)[id]->m_dir);
@@ -122,7 +122,7 @@ void TXMesh::AddPoint(LONG id, bool firstcap, bool hasnext, bool closed, ULONG c
 
 	if(hasnext==true)
 	{
-		DirectionToRotation(tangent,up);
+		DirectionToRotation(m_matrix, tangent, up);
 		m_xf.SetRotationFromMatrix3(m_matrix);
 	}
 
@@ -190,23 +190,4 @@ void TXMesh::AddPoint(LONG id, bool firstcap, bool hasnext, bool closed, ULONG c
 
 	}
 
-}
-
-void TXMesh::DirectionToRotation(CVector3f& in_dir, CVector3f& in_up)
-{
-	CVector3 v1, v2,dir,up;
-
-	dir.Set(in_dir.GetX(),in_dir.GetY(),in_dir.GetZ());
-	up.Set(in_up.GetX(),in_up.GetY(),in_up.GetZ());
-
-	dir.NormalizeInPlace();
-	up.NormalizeInPlace();
-
-	v1.Cross(dir, up);
-	v2.Cross(v1, dir);
-
-	v1.NormalizeInPlace();
-	v2.NormalizeInPlace();
-
-	m_matrix.Set(v1.GetX(), v1.GetY(), v1.GetZ(), dir.GetX(), dir.GetY(), dir.GetZ(), v2.GetX(), v2.GetY(), v2.GetZ());
 }

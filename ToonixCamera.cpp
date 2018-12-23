@@ -1,24 +1,7 @@
 // Toonix Camera
 //--------------------------------------------
 #include "ToonixCamera.h"
-
-void LogMatrix4(CMatrix4f& mat, CString header)
-{
-	float* m = mat.Get();
-	CString log = header + L"(";
-	for(int i=0;i<16;i++)
-	{
-		log +=(CString)m[i];
-		if(i<15)log+=L"|";
-	}
-	log += L")";
-	Application().LogMessage(log);
-}
-
-void LogVector3(CVector3f& vec, CString header)
-{
-	Application().LogMessage(header+L"("+(CString)vec.GetX()+L","+(CString)vec.GetY()+L","+(CString)vec.GetZ());
-}
+#include "ToonixUtils.h"
 
 TXPlane::TXPlane(void){};
 TXPlane::~TXPlane(){};
@@ -40,14 +23,14 @@ void TXPlane::SetFromCamera(TXCamera* cam,bool negate)
 	if(!negate)
 	{
 		CVector3f v(0,0,-1);
-		m_norm = cam->RotateVector(v);
+		m_norm = RotateVector(v, cam->m_quat);
 		m_pos.ScaleAdd(cam->m_near,m_norm,cam->m_pos);
 	}
 
 	else
 	{
 		CVector3f v(0,0,1);
-		m_norm = cam->RotateVector(v);
+		m_norm = RotateVector(v, cam->m_quat);
 		m_pos.ScaleAdd(-cam->m_far,m_norm,cam->m_pos);
 	}
 	m_d =  -(m_norm.Dot(m_pos));
@@ -91,10 +74,6 @@ void TXCamera::Set(const CMatrix4f& matrix, const float& fov, const float& aspec
 
 	// compute width and height of the near and far plane sections
 	m_tan = (float)tan(DegreesToRadians(m_fov)* 0.5);
-	m_nw = m_near * m_tan;
-	m_nh = m_nw / m_aspect;
-	m_fw = m_far  * m_tan;
-	m_fh = m_fw / m_aspect;
 
 	m_limits.resize(4);
 	GetTransformation();
@@ -105,45 +84,53 @@ void TXCamera::Set(const CMatrix4f& matrix, const float& fov, const float& aspec
 
 void TXCamera::GetPlanes()
 {
+	CVector3f ntl, ntr, nbl, nbr, ftl, ftr, fbl, fbr, nc, fc;
+	float nw, nh, fw, fh;
+
+	nw = m_near * m_tan;
+	nh = nw / m_aspect;
+	fw = m_far * m_tan;
+	fh = fw / m_aspect;
+
 	m_planes.resize(6);
 	CVector3f tmp;
 
 	// compute the centers of the near and far planes
 	tmp.Scale(-m_near, m_forward);
-	m_nc.Sub(m_pos,tmp);
+	nc.Sub(m_pos,tmp);
 	tmp.Scale(-m_far, m_forward);
-	m_fc.Sub(m_pos,tmp);
+	fc.Sub(m_pos,tmp);
 
 	// compute the 4 corners of the frustum on the near plane
-	tmp.Scale(m_nh,m_up);
-	m_ntl.Add(m_nc,tmp);
-	m_ntr.Add(m_nc,tmp);
-	m_nbl.Sub(m_nc,tmp);
-	m_nbr.Sub(m_nc,tmp);
+	tmp.Scale(nh,m_up);
+	ntl.Add(nc,tmp);
+	ntr.Add(nc,tmp);
+	nbl.Sub(nc,tmp);
+	nbr.Sub(nc,tmp);
 
-	tmp.Scale(m_nw,m_side);
-	m_ntl.SubInPlace(tmp);
-	m_ntr.AddInPlace(tmp);
-	m_nbl.SubInPlace(tmp);
-	m_nbr.AddInPlace(tmp);
+	tmp.Scale(nw,m_side);
+	ntl.SubInPlace(tmp);
+	ntr.AddInPlace(tmp);
+	nbl.SubInPlace(tmp);
+	nbr.AddInPlace(tmp);
 
 	// compute the 4 corners of the frustum on the far plane
-	tmp.Scale(m_fh,m_up);
-	m_ftl.Add(m_fc,tmp);
-	m_ftr.Add(m_fc,tmp);
-	m_fbl.Sub(m_fc,tmp);
-	m_fbr.Sub(m_fc,tmp);
+	tmp.Scale(fh,m_up);
+	ftl.Add(fc,tmp);
+	ftr.Add(fc,tmp);
+	fbl.Sub(fc,tmp);
+	fbr.Sub(fc,tmp);
 
-	tmp.Scale(m_fw,m_side);
-	m_ftl.SubInPlace(tmp);
-	m_ftr.AddInPlace(tmp);
-	m_fbl.SubInPlace(tmp);
-	m_fbr.AddInPlace(tmp);
+	tmp.Scale(fw,m_side);
+	ftl.SubInPlace(tmp);
+	ftr.AddInPlace(tmp);
+	fbl.SubInPlace(tmp);
+	fbr.AddInPlace(tmp);
 
-	m_planes[TOP].SetFromThreePoints(m_ntr,m_ntl,m_ftl);
-	m_planes[BOTTOM].SetFromThreePoints(m_nbl,m_nbr,m_fbr);
-	m_planes[LEFT].SetFromThreePoints(m_ntl,m_nbl,m_fbl);
-	m_planes[RIGHT].SetFromThreePoints(m_nbr,m_ntr,m_fbr);
+	m_planes[TOP].SetFromThreePoints(ntr,ntl,ftl);
+	m_planes[BOTTOM].SetFromThreePoints(nbl,nbr,fbr);
+	m_planes[LEFT].SetFromThreePoints(ntl,nbl,fbl);
+	m_planes[RIGHT].SetFromThreePoints(nbr,ntr,fbr);
 	m_planes[NEARP].SetFromCamera(this,false);
 	m_planes[FARP].SetFromCamera(this,true);
 
@@ -309,13 +296,14 @@ void TXCamera::GetTransformation()
 	m_pos.Set(m[12],m[13],m[14]);
 
 	m_forward.Set(0,0,-1);
-	m_forward = RotateVector(m_forward);
+	m_forward = RotateVector(m_forward, m_quat);
 	m_side.Set(1,0,0);
-	m_side = RotateVector(m_side);
+	m_side = RotateVector(m_side, m_quat);
 	m_up.Set(0,1,0);
-	m_up = RotateVector(m_up);
+	m_up = RotateVector(m_up, m_quat);
 }
 
+/*
 CVector3f TXCamera::RotateVector(CVector3f& v)
 {
 	float len = v.GetLength();
@@ -339,29 +327,7 @@ CVector3f TXCamera::RotateVector(CVector3f& v)
 	return out;
 }
 
-CVector3f TXCamera::RotateVector(CVector3f& v, CQuaternionf& quat)
-{
-	float len = v.GetLength();
-	CVector3f vn;
-	CQuaternionf q2;
-
-	vn.Normalize(v);
-	q2.Conjugate(quat);
-
-	CQuaternionf vecQuat, resQuat;
-
-	vecQuat.PutX(vn.GetX());
-	vecQuat.PutY(vn.GetY());
-	vecQuat.PutZ(vn.GetZ());
-
-	resQuat.Mul(vecQuat,q2);
-	resQuat.Mul(quat,resQuat);
-
-	CVector3f out(resQuat.GetX(),resQuat.GetY(),resQuat.GetZ());
-	out.SetLength(len);
-	return out;
-}
-
+*/
 /*
 bool TXCamera::See(CVector3f p)
 {
@@ -465,14 +431,14 @@ CVector3f TXCamera::GetLimit(CVector3f& axis,CVector3f& perp, float angle)
 	r2.Set(m_quat);
 	r1.Mul(r2);
 	CQuaternionf q = r1.GetQuaternion();
-	CVector3f limit = RotateVector(perp,q);
+	CVector3f limit = RotateVector(perp, q);
 	return limit;
 }
 
 void TXCamera::GetLimits()
 {
 	m_forward.Set(0,0,-1);
-	m_forward = RotateVector(m_forward,m_quat);
+	m_forward = RotateVector(m_forward, m_quat);
 	
 	CVector3f dir, axis, perp;
 	axis.Set(0,1,0);

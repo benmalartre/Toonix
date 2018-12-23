@@ -66,6 +66,9 @@
     <ClInclude Include="ToonixGLSL.h" />
     <ClInclude Include="gl3w\GL\gl3w.h" />
     <ClInclude Include="gl3w\GL\glcorearb.h" />
+    <ClInclude Include="ToonixUtils.h">
+      <Filter>header</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ToonixBBox.cpp">
@@ -174,5 +177,8 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="gl3w\gl3w.cpp" />
+    <ClCompile Include="ToonixUtils.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

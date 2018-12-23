@@ -137,7 +137,7 @@ TXGrid3D::~TXGrid3D()
 void TXGrid3D::PlaceTriangle(TXTriangle *t)
 {
 	// bounding box
-	CVector3f tmin(DBL_MAX, DBL_MAX, DBL_MAX), tmax(-DBL_MAX, -DBL_MAX, -DBL_MAX);
+	CVector3f tmin(FLT_MAX, FLT_MAX, FLT_MAX), tmax(-FLT_MAX, -DBL_MAX, -FLT_MAX);
 	for (int v=0; v<3; v++)
 	{
 		tmin.Set(

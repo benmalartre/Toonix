@@ -158,6 +158,7 @@
     <ClInclude Include="ToonixLine.h" />
     <ClInclude Include="ToonixMesh.h" />
     <ClInclude Include="ToonixRegister.h" />
+    <ClInclude Include="ToonixUtils.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="gl3w\gl3w.cpp" />
@@ -196,6 +197,7 @@
     <ClCompile Include="ToonixRegister.cpp" />
     <ClCompile Include="ToonixSilhouette.cpp" />
     <ClCompile Include="ToonixStrands.cpp" />
+    <ClCompile Include="ToonixUtils.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

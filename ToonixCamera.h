@@ -5,6 +5,7 @@
 
 #include "ToonixRegister.h"
 #include "ToonixGeometry.h"
+#include "ToonixUtils.h"
 
 #define ANG2RAD 3.14159265358979323846/180.0
 
@@ -62,13 +63,7 @@ public:
 	CQuaternionf m_quat;
 	CVector3f m_pos;
 	CVector3f m_forward, m_side,m_up;
-	
-	//float _planedistance;
-	//float _dot;
 	float m_near, m_far,m_tan,m_aspect,m_fov;
-
-	CVector3f m_ntl,m_ntr,m_nbl,m_nbr,m_ftl,m_ftr,m_fbl,m_fbr,m_nc,m_fc;
-	float m_nw,m_nh,m_fw,m_fh;
 
 	void Set(const CMatrix4f& matrix, const float& fov, const float& aspect, const float& near,const float& far);
 	/*
@@ -80,9 +75,8 @@ public:
 	*/
 	void GetTransformation();
 	//void GetProjectionMatrix();
-	CVector3f RotateVector(CVector3f& perp);
-	CVector3f RotateVector(CVector3f& perp, CQuaternionf& quat);
-	void GetVisiblePoints(TXGeometry* geom);
+	//CVector3f RotateVector(CVector3f& perp);
+	//void GetVisiblePoints(TXGeometry* geom);
 
 	//CVector3f GetLimit(CVector3f& axis,CVector3f& perp, float angle);
 	//bool See(CVector3f p);
