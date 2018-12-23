@@ -4,60 +4,63 @@
 
 TXLight::TXLight()
 {
-	_nbp = 0;
-	_nbv = 0;
-	_view = CVector3f(0,0,0);
-	_lights.resize(0);
+	m_nbp = 0;
+	m_nbv = 0;
+	m_view = CVector3f(0,0,0);
+	m_lights.resize(0);
 }
 
 void TXLight::CutTriangle(TXGeometry* geom,ULONG a, ULONG b, ULONG c)
 {
 	CVector3f pa,pb,pc;
-	pa = geom->_vertices[a]->_pos;
-	pb = geom->_vertices[c]->_pos;
+	pa = geom->m_vertices[a]->m_pos;
+	pb = geom->m_vertices[c]->m_pos;
 
-	float weight = ABS(geom->_vertices[a]->_dot)/(ABS(geom->_vertices[a]->_dot)+ABS(geom->_vertices[c]->_dot));
+	float weight = ABS(geom->m_vertices[a]->m_dot)/(ABS(geom->m_vertices[a]->m_dot)+ABS(geom->m_vertices[c]->m_dot));
 	pc.LinearlyInterpolate(pa,pb,weight);
 
-	if(geom->_vertices[a]->_sign==-1)
-		_vertices[a].Set(pc.GetX(),pc.GetY(),pc.GetZ());
+	if(geom->m_vertices[a]->m_sign==-1)
+		m_vertices[a].Set(pc.GetX(),pc.GetY(),pc.GetZ());
 		
 	else
-		_vertices[c].Set(pc.GetX(),pc.GetY(),pc.GetZ());
+		m_vertices[c].Set(pc.GetX(),pc.GetY(),pc.GetZ());
 
-	pa = geom->_vertices[b]->_pos;
-	pb = geom->_vertices[c]->_pos;
-	weight = ABS(geom->_vertices[b]->_dot)/(ABS(geom->_vertices[b]->_dot)+ABS(geom->_vertices[c]->_dot));
+	pa = geom->m_vertices[b]->m_pos;
+	pb = geom->m_vertices[c]->m_pos;
+	weight = ABS(geom->m_vertices[b]->m_dot)/(ABS(geom->m_vertices[b]->m_dot)+ABS(geom->m_vertices[c]->m_dot));
 	pc.LinearlyInterpolate(pa,pb,weight);
 
-	if(geom->_vertices[a]->_sign==-1)
-		_vertices[b].Set(pc.GetX(),pc.GetY(),pc.GetZ());
+	if(geom->m_vertices[a]->m_sign==-1)
+		m_vertices[b].Set(pc.GetX(),pc.GetY(),pc.GetZ());
 		
 	else
-		_vertices[c].Set(pc.GetX(),pc.GetY(),pc.GetZ());
+		m_vertices[c].Set(pc.GetX(),pc.GetY(),pc.GetZ());
 }
 
 void TXLight::ClearDatas()
 {
-	_geom->Unlit();
-	_vertices.clear();
-	_polygons.Clear();
-	_litvertices.clear();
-	_nbp = _nbv = 0;
+	m_geom->Unlit();
+	m_vertices.clear();
+	m_polygons.Clear();
+	m_litvertices.clear();
+	m_nbp = m_nbv = 0;
 }
 
 bool TXLight::SeeTriangle(TXTriangle* t, CVector3f& p, float& dist)
 {
-	CVector3f a,b,c,d;
-	a = _geom->_vertices[t->_pid[0]]->_pos;
-	b = _geom->_vertices[t->_pid[1]]->_pos;
-	c = _geom->_vertices[t->_pid[2]]->_pos;
+	if(t->IsVisible())
+	{
+		CVector3f a,b,c,d;
+		a = m_geom->m_vertices[t->m_pid[0]]->m_pos;
+		b = m_geom->m_vertices[t->m_pid[1]]->m_pos;
+		c = m_geom->m_vertices[t->m_pid[2]]->m_pos;
 
-	d.Set((a.GetX()+b.GetX()+c.GetX())/3,(a.GetY()+b.GetY()+c.GetY())/3,(a.GetZ()+b.GetZ()+c.GetZ())/3);
-	d.Sub(d,p);
+		d.Set((a.GetX()+b.GetX()+c.GetX())/3,(a.GetY()+b.GetY()+c.GetY())/3,(a.GetZ()+b.GetZ()+c.GetZ())/3);
+		d.Sub(d,p);
 
-	if(d.GetLength()<dist)return true;
-	else return false;
+		if(d.GetLength()<dist)return true;
+	}
+	return false;
 }
 
 void TXLight::Build()
@@ -71,35 +74,35 @@ void TXLight::Build()
 
 	VerticeMap::iterator iter;
 
-	for(ULONG l=0; l<_lights.size();l++)
+	for(ULONG l=0; l<m_lights.size();l++)
 	{
-		_geom->GetDotAndSign(_lights[l],_bias[l]);
+		m_geom->GetDotAndSign(m_lights[l],m_bias[l]);
 
-		for(ULONG t=0;t<_geom->_triangles.size();t++)
+		for(ULONG t=0;t<m_geom->m_triangles.size();t++)
 		{
-			triangle = _geom->_triangles[t];
+			triangle = m_geom->m_triangles[t];
 
 			// skip if triangle is NOT facing the camera
-			if(!triangle->_facing)continue;
+			if(!triangle->m_facing)continue;
 
 			// skip if triangle too far from light
-			if(!SeeTriangle(triangle, _lights[l], _distance[l]))continue;
+			if(!SeeTriangle(triangle, m_lights[l], m_distance[l]))continue;
 
 			islit = false;
 
-			a=triangle->_pid[0];
-			b=triangle->_pid[1];
-			c=triangle->_pid[2];
+			a=triangle->m_pid[0];
+			b=triangle->m_pid[1];
+			c=triangle->m_pid[2];
 
 			LONG sa,sb,sc;
-			sa = _geom->_vertices[a]->_sign;
-			sb = _geom->_vertices[b]->_sign;
-			sc = _geom->_vertices[c]->_sign;
+			sa = m_geom->m_vertices[a]->m_sign;
+			sb = m_geom->m_vertices[b]->m_sign;
+			sc = m_geom->m_vertices[c]->m_sign;
 
 			int cnt = sa+sb+sc;
 			int vi;
 
-			if(_reverse)
+			if(m_reverse)
 			{
 				if(cnt >0)islit = true;
 			}
@@ -112,29 +115,29 @@ void TXLight::Build()
 			{
 				for(ULONG ti=0;ti<3;ti++)
 				{
-					vi = triangle->_pid[ti];
-					if(!_geom->_vertices[vi]->_lit)
+					vi = triangle->m_pid[ti];
+					if(!m_geom->m_vertices[vi]->m_lit)
 					{
 						//Push along normal
-						CVector3f vn = _geom->_vertices[vi]->_norm;
-						vn*=_push;
-						vn+=_geom->_vertices[vi]->_pos;
-						_vertices.push_back(vn);
+						CVector3f vn = m_geom->m_vertices[vi]->m_norm;
+						vn*=m_push;
+						vn+=m_geom->m_vertices[vi]->m_pos;
+						m_vertices.push_back(vn);
 
-						_litvertices.insert(std::pair<int,int>(vi,_nbv));
-						_geom->_vertices[vi]->_lit = true;
-						_nbv++;
+						m_litvertices.insert(std::pair<int,int>(vi,m_nbv));
+						m_geom->m_vertices[vi]->m_lit = true;
+						m_nbv++;
 					}
-					iter = _litvertices.begin();
-					iter = _litvertices.find(vi);
-					if(iter != _litvertices.end())
-						_polygons.Add(iter->second);
+					iter = m_litvertices.begin();
+					iter = m_litvertices.find(vi);
+					if(iter != m_litvertices.end())
+						m_polygons.Add(iter->second);
 					else
-						_polygons.Add(-2);
-					_nbp++;
+						m_polygons.Add(-2);
+					m_nbp++;
 				}
-				_polygons.Add(-2);
-				_nbp++;
+				m_polygons.Add(-2);
+				m_nbp++;
 			}
 		}
 	}

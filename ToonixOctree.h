@@ -73,7 +73,7 @@ private:
 	TXCamera* _camera;
 
 	// static members
-	static const int MAX_EDGE_NUMBER;
+	static const int OCTREE_MAX_EDGE_NUMBER;
 };
 
 #endif /* _TOONIX_OCTREE_H_ */

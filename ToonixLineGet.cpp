@@ -94,7 +94,10 @@ SICALLBACK ToonixLineGet_Evaluate( ICENodeContext& in_ctxt )
 	CDataArrayCustomType::TData* pBufferToonixLine;
 	ULONG nSizeToonixLine;
 	ToonixLine.GetData( 0,(const CDataArrayCustomType::TData**)&pBufferToonixLine, nSizeToonixLine );
+	if(nSizeToonixLine != sizeof(TXLine))return CStatus::OK;
+
 	TXLine* line = (TXLine*)pBufferToonixLine;
+
 	TXChain* chain = NULL;
 	TXPoint* point = NULL;
 
@@ -108,15 +111,15 @@ SICALLBACK ToonixLineGet_Evaluate( ICENodeContext& in_ctxt )
 			// Get the output port array ...			
 			CDataArray2DVector3f outData( in_ctxt );
 
-			CDataArray2DVector3f::Accessor outDataSubArray = outData.Resize(0,line->_nbp);
+			CDataArray2DVector3f::Accessor outDataSubArray = outData.Resize(0,line->m_nbp);
 			ULONG n = 0;
-			for(ULONG c=0;c<line->_chains.size();c++)
+			for(ULONG c=0;c<line->m_chains.size();c++)
 			{
-				chain = line->_chains[c];
-				for(ULONG p=0;p<chain->_points.size();p++)
+				chain = line->m_chains[c];
+				for(ULONG p=0;p<chain->m_points.size();p++)
 				{
-					point = chain->_points[p];
-					outDataSubArray[n] = point->_pos;
+					point = chain->m_points[p];
+					outDataSubArray[n] = point->m_pos;
 					n++;
 				}
 			}
@@ -129,15 +132,15 @@ SICALLBACK ToonixLineGet_Evaluate( ICENodeContext& in_ctxt )
 			// Get the output port array ...					
 			CDataArray2DVector3f outData( in_ctxt );
 
-			CDataArray2DVector3f::Accessor outDataSubArray = outData.Resize(0,line->_nbp);
+			CDataArray2DVector3f::Accessor outDataSubArray = outData.Resize(0,line->m_nbp);
 			ULONG n = 0;
-			for(ULONG c=0;c<line->_chains.size();c++)
+			for(ULONG c=0;c<line->m_chains.size();c++)
 			{
-				chain = line->_chains[c];
-				for(ULONG p=0;p<chain->_points.size();p++)
+				chain = line->m_chains[c];
+				for(ULONG p=0;p<chain->m_points.size();p++)
 				{
-					point = chain->_points[p];
-					outDataSubArray[n] = point->_dir;
+					point = chain->m_points[p];
+					outDataSubArray[n] = point->m_dir;
 					n++;
 				}
 			}
@@ -149,15 +152,15 @@ SICALLBACK ToonixLineGet_Evaluate( ICENodeContext& in_ctxt )
 			// Get the output port array ...					
 			CDataArray2DVector3f outData( in_ctxt );
 
-			CDataArray2DVector3f::Accessor outDataSubArray = outData.Resize(0,line->_nbp);
+			CDataArray2DVector3f::Accessor outDataSubArray = outData.Resize(0,line->m_nbp);
 			ULONG n = 0;
-			for(ULONG c=0;c<line->_chains.size();c++)
+			for(ULONG c=0;c<line->m_chains.size();c++)
 			{
-				chain = line->_chains[c];
-				for(ULONG p=0;p<chain->_points.size();p++)
+				chain = line->m_chains[c];
+				for(ULONG p=0;p<chain->m_points.size();p++)
 				{
-					point = chain->_points[p];
-					outDataSubArray[n] = point->_norm;
+					point = chain->m_points[p];
+					outDataSubArray[n] = point->m_norm;
 					n++;
 				}
 			}
@@ -169,15 +172,15 @@ SICALLBACK ToonixLineGet_Evaluate( ICENodeContext& in_ctxt )
 			// Get the output port array ...					
 			CDataArray2DFloat outData( in_ctxt );
 
-			CDataArray2DFloat::Accessor outDataSubArray = outData.Resize(0,line->_nbp);
+			CDataArray2DFloat::Accessor outDataSubArray = outData.Resize(0,line->m_nbp);
 			ULONG n = 0;
-			for(ULONG c=0;c<line->_chains.size();c++)
+			for(ULONG c=0;c<line->m_chains.size();c++)
 			{
-				chain = line->_chains[c];
-				for(ULONG p=0;p<chain->_points.size();p++)
+				chain = line->m_chains[c];
+				for(ULONG p=0;p<chain->m_points.size();p++)
 				{
-					point = chain->_points[p];
-					outDataSubArray[n] = point->_length;
+					point = chain->m_points[p];
+					outDataSubArray[n] = point->m_length;
 					n++;
 				}
 			}
@@ -189,15 +192,15 @@ SICALLBACK ToonixLineGet_Evaluate( ICENodeContext& in_ctxt )
 			// Get the output port array ...			
 			CDataArray2DFloat outData( in_ctxt );
 
-			CDataArray2DFloat::Accessor outDataSubArray = outData.Resize(0,line->_nbp);
+			CDataArray2DFloat::Accessor outDataSubArray = outData.Resize(0,line->m_nbp);
 			ULONG n = 0;
-			for(ULONG c=0;c<line->_chains.size();c++)
+			for(ULONG c=0;c<line->m_chains.size();c++)
 			{
-				chain = line->_chains[c];
-				for(ULONG p=0;p<chain->_points.size();p++)
+				chain = line->m_chains[c];
+				for(ULONG p=0;p<chain->m_points.size();p++)
 				{
-					point = chain->_points[p];
-					outDataSubArray[n] = point->_radius;
+					point = chain->m_points[p];
+					outDataSubArray[n] = point->m_radius;
 					n++;
 				}
 			}
@@ -209,15 +212,15 @@ SICALLBACK ToonixLineGet_Evaluate( ICENodeContext& in_ctxt )
 			// Get the output port array ...					
 			CDataArray2DLong outData( in_ctxt );
 
-			CDataArray2DLong::Accessor outDataSubArray = outData.Resize(0,line->_nbp);
+			CDataArray2DLong::Accessor outDataSubArray = outData.Resize(0,line->m_nbp);
 			ULONG n = 0;
-			for(ULONG c=0;c<line->_chains.size();c++)
+			for(ULONG c=0;c<line->m_chains.size();c++)
 			{
-				chain = line->_chains[c];
-				for(ULONG p=0;p<chain->_points.size();p++)
+				chain = line->m_chains[c];
+				for(ULONG p=0;p<chain->m_points.size();p++)
 				{
-					point = chain->_points[p];
-					outDataSubArray[n] = point->_lineid;
+					point = chain->m_points[p];
+					outDataSubArray[n] = point->m_lineid;
 					n++;
 				}
 			}
@@ -229,15 +232,15 @@ SICALLBACK ToonixLineGet_Evaluate( ICENodeContext& in_ctxt )
 			// Get the output port array ...					
 			CDataArray2DLong outData( in_ctxt );
 
-			CDataArray2DLong::Accessor outDataSubArray = outData.Resize(0,line->_nbp);
+			CDataArray2DLong::Accessor outDataSubArray = outData.Resize(0,line->m_nbp);
 			ULONG n = 0;
-			for(ULONG c=0;c<line->_chains.size();c++)
+			for(ULONG c=0;c<line->m_chains.size();c++)
 			{
-				chain = line->_chains[c];
-				for(ULONG p=0;p<chain->_points.size();p++)
+				chain = line->m_chains[c];
+				for(ULONG p=0;p<chain->m_points.size();p++)
 				{
-					point = chain->_points[p];
-					outDataSubArray[n] = point->_sublineid;
+					point = chain->m_points[p];
+					outDataSubArray[n] = point->m_sublineid;
 					n++;
 				}
 			}

@@ -3,6 +3,7 @@
 #include "ToonixRegister.h"
 #include "ToonixData.h"
 #include "ToonixLine.h"
+#include "ToonixCommon.h"
 
 // Defines port, group and map identifiers used for registering the ICENode
 enum IDs
@@ -14,6 +15,7 @@ enum IDs
 	ID_IN_Radius = 4,
 	ID_IN_LineID = 5,
 	ID_IN_SublineID = 6,
+	ID_IN_Color = 7,
 	ID_G_100 = 100,
 	ID_OUT_ToonixLine = 200,
 	ID_TYPE_CNS = 400,
@@ -52,7 +54,11 @@ bool GetLineSetterDirtyState(ICENodeContext& in_ctxt )
 	bool sublineIDDirty = SublineIDState.IsDirty( CICEPortState::siDataDirtyState );
 	SublineIDState.ClearState();
 
-	return(positionDirty||directionDirty||normalDirty||lengthDirty||radiusDirty||lineIDDirty||sublineIDDirty);
+	CICEPortState ColorState( in_ctxt, ID_IN_Color );
+	bool colorDirty = ColorState.IsDirty( CICEPortState::siDataDirtyState );
+	ColorState.ClearState();
+
+	return(positionDirty||directionDirty||normalDirty||lengthDirty||radiusDirty||lineIDDirty||sublineIDDirty||colorDirty);
 }
 
 
@@ -94,6 +100,9 @@ CStatus RegisterToonixLineSet( PluginRegistrar& in_reg )
 	st.AssertSucceeded( ) ;
 
 	st = nodeDef.AddInputPort(ID_IN_SublineID,ID_G_100,siICENodeDataLong,siICENodeStructureArray,siICENodeContextSingleton,L"SublineID",L"SublineID");
+	st.AssertSucceeded( ) ;
+
+	st = nodeDef.AddInputPort(ID_IN_Color,ID_G_100,siICENodeDataColor4,siICENodeStructureArray,siICENodeContextSingleton,L"Color",L"Color");
 	st.AssertSucceeded( ) ;
 
 	// Add OutputPort
@@ -153,6 +162,9 @@ SICALLBACK ToonixLineSet_Evaluate( ICENodeContext& in_ctxt )
 			CDataArray2DLong inSublineID( in_ctxt, ID_IN_SublineID );
 			CDataArray2DLong::Accessor aSublineID = inSublineID[0];
 
+			CDataArray2DColor4f inColor( in_ctxt, ID_IN_Color );
+			CDataArray2DColor4f::Accessor aColor = inColor[0];
+
 			ULONG nbp = aPosition.GetCount();
 
 			LONG currentline, currentsubline;
@@ -163,26 +175,27 @@ SICALLBACK ToonixLineSet_Evaluate( ICENodeContext& in_ctxt )
 			for(ULONG n=0;n<nbp;n++)
 			{
 				TXPoint* pnt = new TXPoint();
-				pnt->_pos = aPosition[n];
-				pnt->_dir = aDirection[n];
-				pnt->_norm = aNormal[n];
-				pnt->_length = aLength[n];
-				pnt->_radius = aRadius[n];
-				pnt->_lineid = aLineID[n];
-				pnt->_sublineid = aSublineID[n];
+				pnt->m_pos = aPosition[n];
+				pnt->m_dir = aDirection[n];
+				pnt->m_norm = aNormal[n];
+				pnt->m_length = aLength[n];
+				pnt->m_radius = aRadius[n];
+				pnt->m_lineid = aLineID[n];
+				pnt->m_sublineid = aSublineID[n];
+				pnt->m_color = aColor[n];
 				chain->AddPoint(pnt);
 
-				if(currentline != pnt->_lineid && currentsubline != pnt->_sublineid)
+				if(currentline != pnt->m_lineid && currentsubline != pnt->m_sublineid)
 				{
-					line->_chains.push_back(chain);
+					line->m_chains.push_back(chain);
 					chain = new TXChain();
 					
 				}
 				
-				currentline = pnt->_lineid;
-				currentsubline = pnt->_sublineid;
+				currentline = pnt->m_lineid;
+				currentsubline = pnt->m_sublineid;
 			}
-			line->_chains.push_back(chain);
+			line->m_chains.push_back(chain);
 
 			// Get the output port array ...			
 			CDataArrayCustomType outData( in_ctxt );
@@ -196,14 +209,8 @@ SICALLBACK ToonixLineSet_Evaluate( ICENodeContext& in_ctxt )
 	return CStatus::OK;
 };
 
-SICALLBACK ToonixLineSet_Term( ICENodeContext& in_ctxt )
+SICALLBACK ToonixLineSet_Term( CRef& in_ctxt )
 {
-	if(!in_ctxt.GetUserData().IsEmpty())
-	{
-		TXLine* line = (TXLine*)(CValue::siPtrType)in_ctxt.GetUserData();
-		line->ClearChains();
-		delete line;
-		in_ctxt.PutUserData((CValue)NULL);
-	}
+	CleanTXLineData(in_ctxt);
 	return CStatus::OK;
 };

@@ -5,6 +5,8 @@
 
 #include <vector>
 #include "ToonixCamera.h"
+#include "ToonixBBox.h"
+#include "ToonixKDTree.h"
 
 // forward declaration
 class TXVertex;
@@ -13,22 +15,11 @@ class TXTriangle;
 class TXPolygon;
 class TXCamera;
 
+static LONG INTERSECTION = -4;
 static LONG CLUSTER = -3;
 static LONG BOUNDARY = -2;
 static LONG CREASE = -1;
 static LONG SILHOUETTE = 0;
-
-static unsigned char ToonixDataR = 222;
-static unsigned char ToonixDataG = 222;
-static unsigned char ToonixDataB = 222;
-
-static unsigned char ToonixLineR = 200;
-static unsigned char ToonixLineG = 200;
-static unsigned char ToonixLineB = 200;
-
-static unsigned char ToonixNodeR = 188;
-static unsigned char ToonixNodeG = 188;
-static unsigned char ToonixNodeB = 188;
 
 // TXVertex Class
 //------------------------------------
@@ -38,25 +29,27 @@ public:
 	TXVertex(LONG id,float px, float py, float pz);
 	~TXVertex();
 
-	void SetVisible(bool visible){_visible = visible;};
-	bool IsVisible(){return _visible;};
+	void SetVisible(bool visible){m_visible = visible;};
+	bool IsVisible(){return m_visible;};
 	bool IsInCell(const CVector3f& min, const CVector3f& max);
+	void IsCrease();
 
-	LONG _id;
-	std::vector<TXEdge*> _edges;
-	std::vector<TXTriangle*> _triangles;
-	bool _isboundary;
+	LONG m_id;
+	std::vector<TXEdge*> m_edges;
+	std::vector<TXTriangle*> m_triangles;
+	bool m_isboundary;
+	bool m_iscrease;
 
-	float _dot;
-	LONG _sign;
+	float m_dot;
+	LONG m_sign;
 
-	CVector3f _pos;
-	CVector3f _norm;
+	CVector3f m_pos;
+	CVector3f m_norm;
 
 	//void IsVisible(TXCamera* cam);
-	bool _visible;
+	bool m_visible;
 
-	bool _lit;
+	bool m_lit;
 };
 
 // TXEdge Class
@@ -67,32 +60,34 @@ public:
 	TXEdge();
 	TXEdge(LONG id,LONG p1, LONG p2);
 	~TXEdge();
-	LONG _id;
-	CLongArray _pid;
-	bool _ischecked;
-	float _weight;
+	LONG m_id;
+	CLongArray m_pid;
+	bool m_ischecked;
+	float m_weight;
 
-	bool _isclusteredge;		// is this edge a cluster edge
-	bool _isboundary;			// is this edge a boundary edge
-	bool _iscrease;				// is this edge a crease edge
-	bool _issilhouette;			// is this edge a silhouette edge
-	bool _isvisible;			// is this edge in camera culling
+	bool m_isintersection;		// is this edge a intersection edge
+	bool m_isclusteredge;		// is this edge a cluster edge
+	bool m_isboundary;			// is this edge a boundary edge
+	bool m_iscrease;				// is this edge a crease edge
+	bool m_issilhouette;			// is this edge a silhouette edge
+	bool m_isvisible;			// is this edge in camera culling
 
-	CFloatArray _angles;		// angles with adjacent edges
+	CFloatArray m_angles;		// angles with adjacent edges
 
-	TXVertex* _start;
-	TXVertex* _end;
+	TXVertex* m_start;
+	TXVertex* m_end;
 
-	std::vector<TXTriangle*> _triangles;
-	std::vector<TXEdge*> _adjacents;		//adjacent edges
-	std::vector<TXEdge*> _neighbors;		//neighboring edges
-	std::vector<TXEdge*> _next;
-	std::vector<TXEdge*> _previous;
+	std::vector<TXTriangle*> m_triangles;
+	std::vector<TXEdge*> m_adjacents;		//adjacent edges
+	std::vector<TXEdge*> m_neighbors;		//neighboring edges
+	std::vector<TXEdge*> m_next;
+	std::vector<TXEdge*> m_previous;
 
-	std::vector<TXPolygon*> _polygons;
+	std::vector<TXPolygon*> m_polygons;
 
-	bool ShareTriangle(TXEdge*& other);
-	bool IsInTriangle(TXTriangle*& t);
+	bool ShareTriangle(TXEdge* other);
+	bool IsInTriangle(TXTriangle* t);
+	bool IsConnectedToTriangle(TXTriangle* t);
 	LONG SharePoint(TXEdge*& other);
 	CLongArray WhoseNext();
 	ULONG GetIDInTriangle(TXTriangle*);
@@ -102,9 +97,13 @@ public:
 	void GetNextEdges();
 
 	float GetAngle(TXEdge* other);
+	float GetAngle(TXVertex* v);
+	float GetDot(TXVertex* v);
 	bool Check(LONG lineid);
 
 	bool TouchCell(const CVector3f& minp, const CVector3f& maxp);
+	bool IntersectWithBBox(TXBBox* in_bbox);
+	bool IntersectWithTriangle(TXTriangle* in_triangle);
 
 	bool _lit;
 };
@@ -115,13 +114,38 @@ class TXTriangle
 {  
 public:
 	TXTriangle(LONG id,LONG p1, LONG p2, LONG p3);
-	std::vector<TXVertex*> _v;
+	std::vector<TXVertex*> m_v;
 	~TXTriangle(){};
-	LONG _id;
-	CLongArray _pid;
-	CVector3f _norm;
-	bool _lit;
-	bool _facing;
+	LONG m_id;
+	CLongArray m_pid;
+	CVector3f m_norm;
+	bool m_lit;
+	bool m_facing;
+	bool IsVisible();
+
+	/// A struct representing a 2-dimensional uv coordinate
+	struct uvCoord
+	{
+		float m_u;
+		float m_v;
+
+		uvCoord(float in_u = 0,float in_v = 0)
+		{
+			m_u = in_u;
+			m_v = in_v;
+		}
+
+		bool IsOnTriangle()
+		{
+			return (m_u >= 0.0f) && (m_v >= 0.0f) && (m_u + m_v <= 1.0f);
+		}
+		bool IsInsideTriangle()
+		{
+			return (m_u > 0.0f) && (m_v > 0.0f) && (m_u + m_v < 1.0f);
+		}
+	};
+
+	virtual uvCoord GetUVFromPoint(const CVector3f & in_pos);
 };
 
 // TXPolygon Class
@@ -131,15 +155,16 @@ class TXPolygon
 public:
 	TXPolygon(LONG id,CLongArray pid);
 	~TXPolygon();
-	LONG _id;
-	CLongArray _pid;
-	CVector3f _norm;
+	LONG m_id;
+	CLongArray m_pid;
+	CVector3f m_norm;
 
-	std::vector<TXEdge*> _edges;
+	std::vector<TXEdge*> m_edges;
 	void PushEdgeData(TXEdge*& edge);
 };
 
 
+class TXKDTree;
 
 // TXGeometry Class
 //------------------------------------
@@ -149,30 +174,39 @@ public:
 	TXGeometry();
 	~TXGeometry();
 
-	std::vector<TXGeometry*> _subgeometries;
-	bool _isleaf;
+	TXKDTree* m_kdtree;
+	std::vector<TXGeometry*> m_subgeometries;
+	bool m_isleaf;
+	bool m_isroot;
+	ULONG m_id;
+	ULONG m_basevertexID;
+	ULONG m_basetriangleID;
+	ULONG m_baseedgeID;
 
-	std::vector<TXVertex*> _vertices;
-	std::vector<TXEdge*> _edges;
-	std::vector<TXVertex*> _visiblevertices;
-	std::vector<TXEdge*> _visibleedges;
-	std::vector<TXTriangle*> _triangles;
-	std::vector<TXPolygon*> _polygons;
+	std::vector<TXVertex*> m_vertices;
+	std::vector<TXEdge*> m_edges;
+	std::vector<TXVertex*> m_visiblevertices;
+	std::vector<TXEdge*> m_visibleedges;
+	std::vector<TXTriangle*> m_triangles;
+	std::vector<TXPolygon*> m_polygons;
 
-	std::vector<TXEdge*> _boundaries;
-	std::vector<TXEdge*> _creases;
-	std::vector<TXEdge*> _clusteredges;
-	std::vector<TXEdge*> _silhouettes;
+	std::vector<TXEdge*> m_boundaries;
+	std::vector<TXEdge*> m_creases;
+	std::vector<TXEdge*> m_clusteredges;
+	std::vector<TXEdge*> m_silhouettes;
+	std::vector<TXEdge*> m_intersections;
 
-	CVector3f _spherecenter;
-	float _sphereradius;
+	CVector3f m_spherecenter;
+	float m_sphereradius;
 
-	CDoubleArray _points;
+	CDoubleArray m_points;
 
 	void GetPointPosition(CICEGeometry& geom);
 
 	void GetDotAndSign(CVector3f& view, float bias);
 	float GetAngleBetweenTwoEdges(ULONG id1, ULONG id2);
+
+	void BuildKDTree();
 
 	void GetCachedMeshData(CICEGeometry& geom);
 	void GetRuntimeMeshData(CICEGeometry& geom);
@@ -180,6 +214,7 @@ public:
 	bool GetBBoxVisibility(TXCamera* camera);
 	void GetVisible(TXCamera* camera);
 	void GetCreaseEdges(float crease);
+	void GetIntersectionEdges();
 	void ClearVisible();
 	void SetAllVisible();
 
@@ -189,21 +224,26 @@ public:
 	void GetSubGeometries(CICEGeometry& geom);
 
 	bool IsSilhouette(TXEdge* e,CVector3f view, bool smooth);
+	bool GetDirtyState(CICEGeometry& geom);
 
 	void Unlit();
 
-	bool _init;				// is cached mesh data initialized
-	bool _creasecached;		// is crease data cached
-	ULONG _nbe;				// actual nb edges on geometry
-	ULONG _nbv;				// actual nb vertices
-	ULONG _nbve;			// nb visible edges
-	ULONG _nbvv;			// nb visible vertices
-	bool _dirty;
-	CVector3f _min, _max;	// bounding box infos
-	CVector3f _view;		// camera position
+	bool m_init;				// is cached mesh data initialized
+	bool m_creasecached;		// is crease data cached
+	ULONG m_nbv;				// actual nb vertices in geometry
+	ULONG m_nbe;				// actual nb edges in geometry
+	ULONG m_nbt;				// actual nb triangles in geometry
 
-	bool _culledges;		// boolean to cull or not edges before building lines
-	int _infrustrum;
+	ULONG m_nbve;			// nb visible edges
+	ULONG m_nbvv;			// nb visible vertices
+
+	ULONG m_dirty;			// is the geometry dirty
+	
+	CVector3f m_min, m_max;	// bounding box infos
+	CVector3f m_view;		// camera position
+
+	bool m_culledges;		// boolean to cull or not edges before building lines
+	int m_infrustrum;
 
 };
 

@@ -87,7 +87,7 @@ SICALLBACK ToonixMesher_Evaluate( ICENodeContext& in_ctxt )
 {
 	TXMesh* mesh = (TXMesh*)(CValue::siPtrType)in_ctxt.GetUserData( );
 
-	if(!mesh->_valid || GetMesherDirtyState(in_ctxt))
+	if(!mesh->m_valid || GetMesherDirtyState(in_ctxt))
 	{
 		// Get the input TXLine
 		CDataArrayCustomType ToonixLine( in_ctxt, ID_IN_ToonixLine );
@@ -98,19 +98,19 @@ SICALLBACK ToonixMesher_Evaluate( ICENodeContext& in_ctxt )
 		TXLine* line = (TXLine*)pBufferToonixLine;
 		if(!line)
 		{
-			mesh->_nbv = mesh->_nbp = 0;
+			mesh->m_nbv = mesh->m_nbp = 0;
 		}
 		else
 		{
-			mesh->_line = line;
+			mesh->m_line = line;
 
 			CDataArrayLong subdivData(in_ctxt, ID_IN_Subdiv);
-			mesh->_subdiv = subdivData[0];
+			mesh->m_subdiv = subdivData[0];
 			CDataArrayVector3f viewData(in_ctxt, ID_IN_ViewPosition);
-			mesh->_view = viewData[0];
+			mesh->m_view = viewData[0];
 			mesh->Build();
 		}
-		mesh->_valid = true;
+		mesh->m_valid = true;
 	}
 
 	// The current output port being evaluated...
@@ -123,10 +123,10 @@ SICALLBACK ToonixMesher_Evaluate( ICENodeContext& in_ctxt )
 			// Get the output port array ...			
 			CDataArray2DVector3f outData( in_ctxt );
 
-			CDataArray2DVector3f::Accessor outDataSubArray = outData.Resize(0,mesh->_nbv);
-			for(ULONG n=0;n<mesh->_nbv;n++)
+			CDataArray2DVector3f::Accessor outDataSubArray = outData.Resize(0,mesh->m_nbv);
+			for(ULONG n=0;n<mesh->m_nbv;n++)
 			{
-				outDataSubArray[n].Set(mesh->_vertices[n].GetX(),mesh->_vertices[n].GetY(),mesh->_vertices[n].GetZ());
+				outDataSubArray[n].Set(mesh->m_vertices[n].GetX(),mesh->m_vertices[n].GetY(),mesh->m_vertices[n].GetZ());
 			}
 			
 		}
@@ -137,10 +137,10 @@ SICALLBACK ToonixMesher_Evaluate( ICENodeContext& in_ctxt )
 			// Get the output port array ...			
 			CDataArray2DLong outData( in_ctxt );	
 
-			CDataArray2DLong::Accessor outDataSubArray = outData.Resize(0,mesh->_nbp);
-			for(ULONG n=0;n<mesh->_nbp;n++)
+			CDataArray2DLong::Accessor outDataSubArray = outData.Resize(0,mesh->m_nbp);
+			for(ULONG n=0;n<mesh->m_nbp;n++)
 			{
-				outDataSubArray[n] = mesh->_polygons[n];
+				outDataSubArray[n] = mesh->m_polygons[n];
 			}
 		}
 		break;
@@ -152,7 +152,7 @@ SICALLBACK ToonixMesher_Init( CRef& in_ctxt )
 {
 	Context ctxt(in_ctxt);
 	TXMesh* mesh = new TXMesh();
-	mesh->_valid = false;
+	mesh->m_valid = false;
 	ctxt.PutUserData((CValue::siPtrType)mesh);
 	return CStatus::OK;
 }

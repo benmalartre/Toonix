@@ -16,33 +16,33 @@ public:
 	TXMesh(TXLine* line);
 	~TXMesh(){};
 
-	std::vector<TXPoint*>* _points;
-	TXLine* _line;
+	std::vector<TXPoint*>* m_points;
+	TXLine* m_line;
 
-	std::vector<CVector3f> _vertices;
-	CLongArray _polygons;
+	std::vector<CVector3f> m_vertices;
+	CLongArray m_polygons;
 
-	CVector3Array _section;
-	ULONG _subdiv;
-	float _factor;
+	CVector3Array m_section;
+	ULONG m_subdiv;
+	float m_factor;
 
-	CTransformation _xf;
-	CVector3f _a;
-	CVector3 _p;
-	CVector3f _offset, _noffset;
-	CMatrix3 _matrix;
+	CTransformation m_xf;
+	CVector3f m_a;
+	CVector3 m_p;
+	CVector3f m_offset, m_noffset;
+	CMatrix3 m_matrix;
 
-	CVector3f _view;
+	CVector3f m_view;
 
 	void AddPoint(LONG id, bool firstcap, bool hasnext, bool closed, ULONG chainsize);
 	void DirectionToRotation(CVector3f& in_dir, CVector3f& in_up);
 
 	void Build();
 
-	ULONG _nbv;
-	ULONG _nbp;
-	bool _dirty;
-	bool _valid;
+	ULONG m_nbv;
+	ULONG m_nbp;
+	bool m_dirty;
+	bool m_valid;
 };
 
 #endif

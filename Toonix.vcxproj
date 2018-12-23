@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{CB87C14A-6177-4E92-B9A6-B513FBD1A902}</ProjectGuid>
+    <RootNamespace>Toonix</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>15.0.27625.0</_ProjectFileVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>.\bin\nt-x86-32\</OutDir>
+    <IntDir>.\bin\nt-x86-32\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>.\bin\nt-x86-64\</OutDir>
+    <IntDir>.\bin\nt-x86-64\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>.\bin\nt-x86-32\</OutDir>
+    <IntDir>.\bin\nt-x86-32\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>.\bin\nt-x86-64\</OutDir>
+    <IntDir>.\bin\nt-x86-64\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>TOONIXGLDRAWER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level3</WarningLevel>
+    </ClCompile>
+    <Link>
+      <OutputFile>.\bin\nt-x86-32\Toonix.dll</OutputFile>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention />
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PreprocessorDefinitions>TOONIXGLDRAWER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level3</WarningLevel>
+      <AdditionalIncludeDirectories>C:\Program Files\Autodesk\Softimage 2015 SP2\XSISDK\include</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <OutputFile>.\bin\nt-x86-64\Toonix.dll</OutputFile>
+      <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
+      <IgnoreSpecificDefaultLibraries>LIBCMT.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention />
+      <AdditionalLibraryDirectories>C:\Program Files\Autodesk\Softimage 2015 SP2\XSISDK\lib\nt-x86-64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glfw3.lib;sicoresdk.lib;sicppsdk.lib;opengl32.lib</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>.\bin\nt-x86-32\Toonix.dll</OutputFile>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention />
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PreprocessorDefinitions>TOONIXGLDRAWER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level3</WarningLevel>
+      <AdditionalIncludeDirectories>C:\Program Files\Autodesk\Softimage 2015 SP2\XSISDK\include;gl3w</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>glfw3.lib;sicoresdk.lib;sicppsdk.lib;opengl32.lib</AdditionalDependencies>
+      <OutputFile>.\bin\nt-x86-64\Toonix.dll</OutputFile>
+      <ModuleDefinitionFile />
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention />
+      <AdditionalLibraryDirectories>C:\Program Files\Autodesk\Softimage 2015 SP2\XSISDK\lib\nt-x86-64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="gl3w\GL\gl3w.h" />
+    <ClInclude Include="gl3w\GL\glcorearb.h" />
+    <ClInclude Include="ToonixBBox.h" />
+    <ClInclude Include="ToonixCamera.h" />
+    <ClInclude Include="ToonixCommon.h" />
+    <ClInclude Include="ToonixData.h" />
+    <ClInclude Include="ToonixGeometry.h" />
+    <ClInclude Include="ToonixGL.h" />
+    <ClInclude Include="ToonixGLDrawer.h" />
+    <ClInclude Include="ToonixGLHair.h" />
+    <ClInclude Include="ToonixGLKDTree.h" />
+    <ClInclude Include="ToonixGLLine.h" />
+    <ClInclude Include="ToonixGLManager.h" />
+    <ClInclude Include="ToonixGLShape.h" />
+    <ClInclude Include="ToonixGLSL.h" />
+    <ClInclude Include="ToonixGrid3D.h" />
+    <ClInclude Include="ToonixKDTree.h" />
+    <ClInclude Include="ToonixLight.h" />
+    <ClInclude Include="ToonixLine.h" />
+    <ClInclude Include="ToonixMesh.h" />
+    <ClInclude Include="ToonixRegister.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="gl3w\gl3w.cpp" />
+    <ClCompile Include="ToonixBBox.cpp" />
+    <ClCompile Include="ToonixBoundary.cpp" />
+    <ClCompile Include="ToonixBVH.cpp" />
+    <ClCompile Include="ToonixCamera.cpp" />
+    <ClCompile Include="ToonixCluster.cpp" />
+    <ClCompile Include="ToonixCommon.cpp" />
+    <ClCompile Include="ToonixCrease.cpp" />
+    <ClCompile Include="ToonixData.cpp" />
+    <ClCompile Include="ToonixDualMesh.cpp" />
+    <ClCompile Include="ToonixGeometry.cpp" />
+    <ClCompile Include="ToonixGetData.cpp" />
+    <ClCompile Include="ToonixGL.cpp" />
+    <ClCompile Include="ToonixGLDrawer.cpp" />
+    <ClCompile Include="ToonixGLKDTree.cpp" />
+    <ClCompile Include="ToonixGLLine.cpp" />
+    <ClCompile Include="ToonixGLManager.cpp" />
+    <ClCompile Include="ToonixGLShape.cpp" />
+    <ClCompile Include="ToonixGrid3D.cpp" />
+    <ClCompile Include="ToonixHairs.cpp" />
+    <ClCompile Include="ToonixIntersection.cpp" />
+    <ClCompile Include="ToonixKDTree.cpp" />
+    <ClCompile Include="ToonixLight.cpp" />
+    <ClCompile Include="ToonixLighter.cpp" />
+    <ClCompile Include="ToonixLine.cpp" />
+    <ClCompile Include="ToonixLineGet.cpp" />
+    <ClCompile Include="ToonixLineMerge.cpp" />
+    <ClCompile Include="ToonixLineModify.cpp" />
+    <ClCompile Include="ToonixLineSet.cpp" />
+    <ClCompile Include="ToonixMesh.cpp" />
+    <ClCompile Include="ToonixMesher.cpp" />
+    <ClCompile Include="ToonixPass.cpp" />
+    <ClCompile Include="ToonixPoints.cpp" />
+    <ClCompile Include="ToonixRegister.cpp" />
+    <ClCompile Include="ToonixSilhouette.cpp" />
+    <ClCompile Include="ToonixStrands.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

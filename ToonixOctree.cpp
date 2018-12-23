@@ -2,7 +2,7 @@
 //-------------------------------------------------
 #include "ToonixOctree.h"
 
-const int TXOctree::MAX_EDGE_NUMBER = 1000;
+const int TXOctree::OCTREE_MAX_EDGE_NUMBER = 1000;
 
 TXOctree::~TXOctree() 
 {
@@ -44,7 +44,7 @@ void TXOctree::Split()
 {
 	int esz = _edges.size();
 	//Application().LogMessage(L"Split OCtree called...Edge Number : "+(CString)esz);
-	if (esz <= MAX_EDGE_NUMBER || (esz <= 2*MAX_EDGE_NUMBER && _depth > 3) ||(esz <= 3*MAX_EDGE_NUMBER && _depth > 4) ||_depth > 6 ) 
+	if (esz <= OCTREE_MAX_EDGE_NUMBER || (esz <= 2*OCTREE_MAX_EDGE_NUMBER && _depth > 3) ||(esz <= 3*OCTREE_MAX_EDGE_NUMBER && _depth > 4) ||_depth > 6 ) 
 	{
 		_isLeaf = true;
 		return;
@@ -96,7 +96,7 @@ int TXOctree::IsVisible(TXCamera* camera)
 			for (int k = 0; k < 2; k++) 
 	{
 		p.Set(xx[i], yy[j], zz[k]);
-		if(camera->See(p))out++;
+		//if(camera->See(p))out++;
 	}
 
 	return out;

@@ -2,6 +2,8 @@
 //------------------------------------------------
 #include "ToonixRegister.h"
 #include "ToonixData.h"
+#include "ToonixCommon.h"
+#include "ToonixGLDrawer.h"
 
 // Defines port, group and map identifiers used for registering the ICENode
 enum IDs
@@ -19,16 +21,6 @@ enum IDs
 	ID_CTXT_CNS,
 	ID_UNDEF = ULONG_MAX
 };
-
-void CleanUpCreaseData(Context& in_ctxt)
-{
-	if(!in_ctxt.GetUserData().IsEmpty())
-	{
-		TXLine* line = (TXLine*)(CValue::siPtrType)in_ctxt.GetUserData( );
-		delete line;
-		in_ctxt.PutUserData((CValue::siPtrType)NULL);
-	}
-}
 
 bool GetCreaseDirtyState(ICENodeContext& in_ctxt )
 {
@@ -121,7 +113,7 @@ SICALLBACK ToonixCrease_Evaluate( ICENodeContext& in_ctxt )
 	if(!data){line->EmptyData();return CStatus::OK;}
 
 	//Get underlying TXGeometry
-	line->_geom = data->_geom;
+	line->m_geom = data->m_geom;
 
 	if(GetCreaseDirtyState(in_ctxt))
 	{
@@ -134,11 +126,11 @@ SICALLBACK ToonixCrease_Evaluate( ICENodeContext& in_ctxt )
 		CDataArrayFloat extendData(in_ctxt, ID_IN_Extend);
 
 		//pass it to TXLine object
-		line->_width = widthData[0];
-		line->_crease = (float)DegreesToRadians(creaseData[0]);
-		line->_break = (float)DegreesToRadians(breakData[0]);
-		line->_filterpoints = filterData[0];
-		line->_extend = extendData[0];
+		line->m_width = widthData[0];
+		line->m_crease = (float)DegreesToRadians(creaseData[0]);
+		line->m_break = (float)DegreesToRadians(breakData[0]);
+		line->m_filterpoints = filterData[0];
+		line->m_extend = extendData[0];
 
 		line->GetCreases();
 		line->Build(CREASE);
@@ -165,17 +157,12 @@ SICALLBACK ToonixCrease_Evaluate( ICENodeContext& in_ctxt )
 
 SICALLBACK ToonixCrease_Init( CRef& in_ctxt )
 {
-	Context context = in_ctxt;
-	// Build a new Line Object
-	TXLine* line = new TXLine();
-	context.PutUserData((CValue::siPtrType)line);
-
+	InitTXLineData(in_ctxt);
 	return CStatus::OK;
 }
 
 SICALLBACK ToonixCrease_Term( CRef& in_ctxt )
 {
-	Context context = in_ctxt;
-	CleanUpCreaseData(context);
+	CleanTXLineData(in_ctxt);
 	return CStatus::OK;
 }

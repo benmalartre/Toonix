@@ -43,7 +43,7 @@ CStatus RegisterToonixStrands( PluginRegistrar& in_reg )
 	st = nodeDef.AddInputPort(ID_IN_ToonixLine,ID_G_100,ToonixLineCustomType,siICENodeStructureSingle,siICENodeContextSingleton,L"ToonixLine",L"ToonixLine",ID_UNDEF,ID_UNDEF,ID_UNDEF);
 	st.AssertSucceeded( ) ;
 
-	st = nodeDef.AddInputPort(ID_IN_PointID,ID_G_100,siICENodeDataLong,siICENodeStructureSingle,siICENodeContextComponent0D,L"PointID",L"PointID",MATH::CVector3f(1.0,1.0,1.0),ID_UNDEF,ID_UNDEF,ID_CTXT_CNS);
+	st = nodeDef.AddInputPort(ID_IN_PointID,ID_G_100,siICENodeDataLong,siICENodeStructureSingle,siICENodeContextComponent0D,L"PointID",L"PointID",0,ID_UNDEF,ID_UNDEF,ID_CTXT_CNS);
 	st.AssertSucceeded( ) ;
 
 	// Add output ports.
@@ -100,21 +100,21 @@ XSIPLUGINCALLBACK CStatus ToonixStrands_Evaluate( ICENodeContext& in_ctxt )
 				// Output arrays must always be initialized first
 				id = PointIDData[it];
 				
-				chain = line->_chains[id];
+				chain = line->m_chains[id];
 				ti = 0;
 				first = true;
 			
-				ULONG u = (ULONG)chain->_points.size()-1;
+				ULONG u = (ULONG)chain->m_points.size()-1;
 				
 				CDataArray2DVector3f::Accessor outAccessor = outData.Resize( it, u);
 				std::vector<TXPoint*>::iterator v;
-				for( v = chain->_points.begin(); v < chain->_points.end(); ++v)
+				for( v = chain->m_points.begin(); v < chain->m_points.end(); ++v)
 				{
 					//Skip first segment first point
 					if(first){first=false;continue;}
 					else
 					{
-						p = (*v)->_pos;
+						p = (*v)->m_pos;
 						outAccessor[ti].Set(p.GetX(),p.GetY(),p.GetZ());
 						ti++;
 					}
@@ -135,21 +135,21 @@ XSIPLUGINCALLBACK CStatus ToonixStrands_Evaluate( ICENodeContext& in_ctxt )
 				// Output arrays must always be initialized first
 				id = PointIDData[it];
 				
-				chain = line->_chains[id];
+				chain = line->m_chains[id];
 				ti = 0;
 				first = true;
 			
-				ULONG u = (ULONG)chain->_points.size()-1;
+				ULONG u = (ULONG)chain->m_points.size()-1;
 				
 				CDataArray2DVector3f::Accessor outAccessor = outData.Resize( it, u);
 				std::vector<TXPoint*>::iterator v;
-				for( v = chain->_points.begin(); v < chain->_points.end(); ++v)
+				for( v = chain->m_points.begin(); v < chain->m_points.end(); ++v)
 				{
 					//Skip first segment first point
 					if(first){first=false;continue;}
 					else
 					{
-						p = (*v)->_dir;
+						p = (*v)->m_dir;
 						outAccessor[ti].Set(p.GetX(),p.GetY(),p.GetZ());
 						ti++;
 					}
@@ -170,21 +170,21 @@ XSIPLUGINCALLBACK CStatus ToonixStrands_Evaluate( ICENodeContext& in_ctxt )
 				// Output arrays must always be initialized first
 				id = PointIDData[it];
 				
-				chain = line->_chains[id];
+				chain = line->m_chains[id];
 				ti = 0;
 				first = true;
 			
-				ULONG u = (ULONG)chain->_points.size()-1;
+				ULONG u = (ULONG)chain->m_points.size()-1;
 				
 				CDataArray2DVector3f::Accessor outAccessor = outData.Resize( it, u);
 				std::vector<TXPoint*>::iterator v;
-				for( v = chain->_points.begin(); v < chain->_points.end(); ++v)
+				for( v = chain->m_points.begin(); v < chain->m_points.end(); ++v)
 				{
 					//Skip first segment first point
 					if(first){first=false;continue;}
 					else
 					{
-						p = (*v)->_norm;
+						p = (*v)->m_norm;
 						outAccessor[ti].Set(p.GetX(),p.GetY(),p.GetZ());
 						ti++;
 					}
@@ -205,21 +205,21 @@ XSIPLUGINCALLBACK CStatus ToonixStrands_Evaluate( ICENodeContext& in_ctxt )
 				// Output arrays must always be initialized first
 				id = PointIDData[it];
 				
-				chain = line->_chains[id];
+				chain = line->m_chains[id];
 				ti = 0;
 				first = true;
 			
-				ULONG u = (ULONG)chain->_points.size()-1;
+				ULONG u = (ULONG)chain->m_points.size()-1;
 				
 				CDataArray2DFloat::Accessor outAccessor = outData.Resize( it, u);
 				std::vector<TXPoint*>::iterator v;
-				for( v = chain->_points.begin(); v < chain->_points.end(); ++v)
+				for( v = chain->m_points.begin(); v < chain->m_points.end(); ++v)
 				{
 					//Skip first segment first point
 					if(first){first=false;continue;}
 					else
 					{
-						s = (*v)->_radius;
+						s = (*v)->m_radius;
 						outAccessor[ti] = s;
 						ti++;
 					}

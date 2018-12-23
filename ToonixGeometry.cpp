@@ -2,12 +2,14 @@
 //--------------------------------------------
 #include "ToonixRegister.h"
 #include "ToonixGeometry.h"
+#include "ToonixKDTree.h"
 
 TXGeometry::TXGeometry()
 {
-	_init = false;
-	_nbv=0;
-	_creasecached = false;
+	m_init = false;
+	m_nbv=0;
+	m_creasecached = false;
+	m_kdtree = new TXKDTree(CVector3f(),CVector3f());
 }
 
 TXGeometry::~TXGeometry()
@@ -15,76 +17,183 @@ TXGeometry::~TXGeometry()
 	ClearDatas();
 }
 
+bool TXGeometry::GetDirtyState(CICEGeometry& geom)
+{
+	Application().LogMessage(L"Get Dirty State Called!!!");
+
+	bool dirty = geom.IsDirty(CICEGeometry::siAnyDirtyState);
+	if(!dirty) return false;
+
+	ULONG bTypeDirtyState = geom.IsDirty( CICEGeometry::siGeometryTypeDirtyState ) ? 1 : 0;
+	ULONG bTransfoDirtyState = geom.IsDirty( CICEGeometry::siTransformationDirtyState ) ? 1 : 0;
+	ULONG bPointsDirtyState = geom.IsDirty( CICEGeometry::siPointPositionDirtyState ) ? 1 : 0;
+	ULONG bTopologyDirtyState = geom.IsDirty( CICEGeometry::siTopologyDirtyState ) ? 1 : 0;
+
+	m_dirty = bTypeDirtyState + bTransfoDirtyState + bPointsDirtyState + bTopologyDirtyState;
+	Application().LogMessage(L"Geometry Dirty State : "+(CString)m_dirty);
+	geom.ClearState();
+	/*
+	ULONG nbsg = geom.GetSubGeometryCount();
+	if(nbsg)
+	{
+		for(ULONG i=0;i<nbsg;i++)
+		{
+			GetDirtyState(geom.GetSubGeometry(i));
+		}
+	}
+	else
+	{
+		geom.ClearState();
+	}
+	*/
+
+	return false;
+	
+	//CICEGeometry::DirtyState
+
+	
+}
+
+/*
+void TXGeometry::DeleteKDTree()
+{
+	
+}
+*/
+
+void TXGeometry::BuildKDTree()
+{
+	Application().LogMessage(L" Build KD Tree Called...");
+	if(!m_kdtree == NULL)
+		delete m_kdtree;
+
+	m_kdtree = new TXKDTree(m_min,m_max);
+
+	float3* points = new float3[m_vertices.size()];
+	CVector3f pos;
+	for(ULONG it=0;it<m_vertices.size();it++)
+	{
+		pos = m_vertices[it]->m_pos;
+		points[it].x = pos.GetX();
+		points[it].y = pos.GetY();
+		points[it].z = pos.GetZ();
+		points[it].id = m_vertices[it]->m_id;
+
+	}
+	m_kdtree->Build(points, m_vertices.size(), m_kdtree, 7, 100, 0);
+
+}
+
 void TXGeometry::GetSubGeometries(CICEGeometry& geom)
 {
-	std::vector<TXGeometry*>::iterator git=_subgeometries.begin();
-	for(;git<_subgeometries.end();git++)
+	std::vector<TXGeometry*>::iterator git=m_subgeometries.begin();
+	for(;git<m_subgeometries.end();git++)
 		delete (*git);
 
 	ULONG nbsg = geom.GetSubGeometryCount();
 	//Application().LogMessage(L"Nb Sub Geometries : "+(CString)nbsg);
 	if(nbsg>0)
 	{
-		_subgeometries.resize(nbsg);
-		_isleaf = false;
+		ULONG basevertexID = 0;
+		ULONG baseedgeID = 0;
+		ULONG basetriangleID = 0;
+
+		m_subgeometries.resize(nbsg);
+		m_isleaf = false;
+		m_isroot = true;
 		for(ULONG i=0;i<nbsg;i++)
 		{
 			TXGeometry* sub = new TXGeometry();
 			CICEGeometry subgeom = geom.GetSubGeometry(i);
 			ULONG nbv = subgeom.GetPointPositionCount();
-			sub->_isleaf = true;
-			_subgeometries[i] = sub;
-			_subgeometries[i]->_nbv = nbv;
+			// sub geometry index
+			sub->m_id = i;
+			sub->m_isleaf = true;
+			sub->m_isroot = false;
+		
+			// get nb points
+			sub->m_nbv = nbv;
+			sub->m_basevertexID = basevertexID;
+
+			//get nb edges
+			sub->m_nbe = subgeom.GetSegmentCount();
+			sub->m_baseedgeID = baseedgeID;
+
+			// get nb triangles
+			sub->m_nbt = subgeom.GetTriangleCount();
+			sub->m_basetriangleID = basetriangleID;
+
+			// set TXGeometry in Array
+			m_subgeometries[i] = sub;
+
+			//increment counter
+			basevertexID += sub->m_nbv;
+			baseedgeID += sub->m_nbe;
+			basetriangleID += sub->m_nbt;
 		}
 	}
 	else 
 	{
-		_isleaf = true;
+		m_isleaf = true;
+		m_isroot = true;
 	}
 }
 
 void TXGeometry::Unlit()
 {
-	for(ULONG l=0;l<_vertices.size();l++)
+	for(ULONG l=0;l<m_vertices.size();l++)
 	{
-		_vertices[l]->_lit = false;	
+		m_vertices[l]->m_lit = false;	
 	}
 
-	for(ULONG v=0;v<_triangles.size();v++)
+	for(ULONG v=0;v<m_triangles.size();v++)
 	{
-		_triangles[v]->_lit = false;	
+		m_triangles[v]->m_lit = false;	
 	}
 }
 
 void TXGeometry::ClearDatas()
 {
-	_boundaries.clear();
-	_creases.clear();
-	_creasecached = false;
-	_clusteredges.clear();
-	_silhouettes.clear();
+	m_boundaries.clear();
+	m_creases.clear();
+	m_creasecached = false;
+	m_clusteredges.clear();
+	m_silhouettes.clear();
+	m_intersections.clear();
 
 	ClearVisible();
 
-	std::vector<TXGeometry*>::iterator it = _subgeometries.begin();
-	for(;it<_subgeometries.end();it++)
+	std::vector<TXGeometry*>::iterator it = m_subgeometries.begin();
+	for(;it<m_subgeometries.end();it++)
 	{
 		delete *it;
 	}
-	_subgeometries.clear();
+	m_subgeometries.clear();
 
-	for(LONG a = 0;a<(LONG)_vertices.size();a++)delete _vertices[a];
-	_vertices.clear();
+	if(m_isroot)
+	{
+		for(LONG a = 0;a<(LONG)m_vertices.size();a++)delete m_vertices[a];
+		m_vertices.clear();
 
-	for(LONG a = 0;a<(LONG)_edges.size();a++)delete _edges[a];
-	_edges.clear();
+		for(LONG a = 0;a<(LONG)m_edges.size();a++)delete m_edges[a];
+		m_edges.clear();
 
-	for(LONG a = 0;a<(LONG)_triangles.size();a++)delete _triangles[a];
-	_triangles.clear();
+		for(LONG a = 0;a<(LONG)m_triangles.size();a++)delete m_triangles[a];
+		m_triangles.clear();
 
-	for(LONG a = 0;a<(LONG)_polygons.size();a++)delete _polygons[a];
-	_polygons.clear();
-	_nbv = _nbe = 0;
+		for(LONG a = 0;a<(LONG)m_polygons.size();a++)delete m_polygons[a];
+		m_polygons.clear();
+	}
+	else
+	{
+		m_vertices.clear();
+		m_edges.clear();
+		m_triangles.clear();
+		m_polygons.clear();
+		
+	}
+	m_nbv = m_nbe = 0;
+	//delete _kdtree;
 
 }
 
@@ -92,22 +201,21 @@ void TXGeometry::GetCachedMeshData(CICEGeometry& geom)
 {
 	ClearDatas();
 	GetSubGeometries(geom);
-
 	GetPointPosition(geom);
 
 	//loop over all edges
-	_nbe = geom.GetSegmentCount();
+	m_nbe = geom.GetSegmentCount();
 	CLongArray sIndices;
 	geom.GetSegmentIndices(sIndices);
-	_edges.resize(_nbe);
+	m_edges.resize(m_nbe);
 
-	for (ULONG i=0; i<_nbe; i++)
+	for (ULONG i=0; i<m_nbe; i++)
 	{
-		_edges[i] = new TXEdge(i,sIndices[i*2],sIndices[i*2+1]);
-		_vertices[sIndices[i*2]]->_edges.push_back(_edges[i]);
-		_vertices[sIndices[i*2+1]]->_edges.push_back(_edges[i]);
-		_edges[i]->_start = _vertices[sIndices[i*2]];
-		_edges[i]->_end = _vertices[sIndices[i*2+1]];
+		m_edges[i] = new TXEdge(i,sIndices[i*2],sIndices[i*2+1]);
+		m_vertices[sIndices[i*2]]->m_edges.push_back(m_edges[i]);
+		m_vertices[sIndices[i*2+1]]->m_edges.push_back(m_edges[i]);
+		m_edges[i]->m_start = m_vertices[sIndices[i*2]];
+		m_edges[i]->m_end = m_vertices[sIndices[i*2+1]];
 	}
 
 	// loop over triangles	*/
@@ -117,23 +225,23 @@ void TXGeometry::GetCachedMeshData(CICEGeometry& geom)
 	CVector3f a, b;
 	CVector3f p;
 
-	_triangles.resize(tCount);
+	m_triangles.resize(tCount);
 
 	for (LONG i=0; i<tCount; i++)
 	{
-		_triangles[i] = new TXTriangle(i,tIndices[i*3],tIndices[i*3+1],tIndices[i*3+2]);
+		m_triangles[i] = new TXTriangle(i,tIndices[i*3],tIndices[i*3+1],tIndices[i*3+2]);
 
 		// Get Normal
-		a.Sub(_vertices[tIndices[i*3]]->_pos,_vertices[tIndices[i*3+1]]->_pos);
-		b.Sub(_vertices[tIndices[i*3]]->_pos,_vertices[tIndices[i*3+2]]->_pos);
-		_triangles[i]->_norm.Cross(a,b);
-		_triangles[i]->_norm.NormalizeInPlace();
+		a.Sub(m_vertices[tIndices[i*3]]->m_pos,m_vertices[tIndices[i*3+1]]->m_pos);
+		b.Sub(m_vertices[tIndices[i*3]]->m_pos,m_vertices[tIndices[i*3+2]]->m_pos);
+		m_triangles[i]->m_norm.Cross(a,b);
+		m_triangles[i]->m_norm.NormalizeInPlace();
 
 		for(LONG j=0;j<3;j++)
 		{
 			// find connected triangles
-			_vertices[tIndices[i*3+j]]->_triangles.push_back(_triangles[i]);
-			_triangles[i]->_v.push_back(_vertices[tIndices[i*3+j]]);
+			m_vertices[tIndices[i*3+j]]->m_triangles.push_back(m_triangles[i]);
+			m_triangles[i]->m_v.push_back(m_vertices[tIndices[i*3+j]]);
 		}
 	}
 
@@ -159,31 +267,31 @@ void TXGeometry::GetCachedMeshData(CICEGeometry& geom)
 
 		for (LONG j=0; j<pid.GetCount(); j++)
 		{
-			pe = _vertices[pid[j]]->_edges;
+			pe = m_vertices[pid[j]]->m_edges;
 			for(LONG k=0;k<(LONG)pe.size();k++)
 			{
 				polygon->PushEdgeData(pe[k]);
 			}
 		}
-		_polygons.push_back(polygon);
+		m_polygons.push_back(polygon);
 	}
 
 	int found;
 	//reloop over all edges getting adjacents + edge type
 	//also get neighboring edges
-	for (ULONG i=0; i<_nbe; i++)
+	for (ULONG i=0; i<m_nbe; i++)
 	{
 		found = 0;
-		TXEdge* e = _edges[i];
+		TXEdge* e = m_edges[i];
 		//loop all triangle connected to first point
-		std::vector<TXTriangle*> et = _vertices[e->_pid[0]]->_triangles;
+		std::vector<TXTriangle*> et = m_vertices[e->m_pid[0]]->m_triangles;
 		for(LONG j= 0;j<(LONG)et.size();j++)
 		{
 			for(LONG k =0;k<3;k++)
 			{
-				if(et[j]->_pid[k] == e->_pid[1])
+				if(et[j]->m_pid[k] == e->m_pid[1])
 				{
-					e->_triangles.push_back(et[j]);
+					e->m_triangles.push_back(et[j]);
 					found++;
 				}
 			}
@@ -191,16 +299,16 @@ void TXGeometry::GetCachedMeshData(CICEGeometry& geom)
 
 		if(found<2)
 		{
-			e->_isboundary = true;
-			_boundaries.push_back(e);
-			_vertices[e->_pid[0]]->_isboundary = true;
-			_vertices[e->_pid[1]]->_isboundary = true;
+			e->m_isboundary = true;
+			m_boundaries.push_back(e);
+			m_vertices[e->m_pid[0]]->m_isboundary = true;
+			m_vertices[e->m_pid[1]]->m_isboundary = true;
 		}
 		else 
 		{
-			e->_isboundary = false;
-			_vertices[e->_pid[0]]->_isboundary = false;
-			_vertices[e->_pid[1]]->_isboundary = false;
+			e->m_isboundary = false;
+			m_vertices[e->m_pid[0]]->m_isboundary = false;
+			m_vertices[e->m_pid[1]]->m_isboundary = false;
 		}
 		
 		e->GetNeighborEdges();
@@ -210,11 +318,31 @@ void TXGeometry::GetCachedMeshData(CICEGeometry& geom)
 	}
 
 	// init mesh data flag
-	_init = true;
-	_dirty = true;
+	m_init = true;
+	m_dirty = true;
+
+	// set sub geometry data
+	if(m_subgeometries.size()>0)
+	{
+		std::vector<TXGeometry*>::iterator it = m_subgeometries.begin();
+		for(;it<m_subgeometries.end();it++)
+		{
+			//Vertex Datas
+			(*it)->m_vertices.resize((*it)->m_nbv);
+			for(ULONG id= (*it)->m_basevertexID;id<(*it)->m_basevertexID+(*it)->m_nbv;id++)(*it)->m_vertices[id-(*it)->m_basevertexID] = m_vertices[id];
+
+			//Edge Datas
+			(*it)->m_edges.resize((*it)->m_nbe);
+			for(ULONG id= (*it)->m_baseedgeID;id<(*it)->m_baseedgeID+(*it)->m_nbe;id++)(*it)->m_edges[id-(*it)->m_baseedgeID]  = m_edges[id];
+
+			//Triangle Datas
+			(*it)->m_triangles.resize((*it)->m_nbt);
+			for(ULONG id= (*it)->m_basetriangleID;id<(*it)->m_basetriangleID+(*it)->m_nbt;id++)(*it)->m_triangles[id-(*it)->m_basetriangleID] = m_triangles[id];
+		}
+	}
 
 	//Set visibility
-	//SetAllVisible();
+	SetAllVisible();
 }
 
 void TXGeometry::GetPointPosition(CICEGeometry& geom)
@@ -223,85 +351,106 @@ void TXGeometry::GetPointPosition(CICEGeometry& geom)
     geom.GetPointPositions( points ) ;
 	LONG pCount = geom.GetPointPositionCount();
 
-	_min = CVector3f(FLT_MAX, FLT_MAX, FLT_MAX);
-	_max = CVector3f(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+	m_min = CVector3f(FLT_MAX, FLT_MAX, FLT_MAX);
+	m_max = CVector3f(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
 	CVector3f pv;
 	bool clear = false;
-	if(_nbv != pCount)clear = true;
+	if(m_nbv != pCount)clear = true;
 
 	if(clear)
 	{
 		// Clean old data
-		for(ULONG v=0;v<_vertices.size();v++)delete _vertices[v];
+		for(ULONG v=0;v<m_vertices.size();v++)delete m_vertices[v];
 
-		_nbv = pCount;
-		_vertices.resize(_nbv);
+		m_nbv = pCount;
+		m_vertices.resize(m_nbv);
 	}
 
 	//only ONE geometrie
-	if(_isleaf)
+	if(m_isleaf)
 	{
 		// loop over vertices
-		for (ULONG i=0; i<_nbv; i++)
+		for (ULONG i=0; i<m_nbv; i++)
 		{	
 			if(clear)
-				_vertices[i] = new TXVertex(i,(float)points[i*3],(float)points[i*3+1],(float)points[i*3+2]);
+				m_vertices[i] = new TXVertex(i,(float)points[i*3],(float)points[i*3+1],(float)points[i*3+2]);
 			else
-				_vertices[i]->_pos.Set((float)points[i*3],(float)points[i*3+1],(float)points[i*3+2]);
+				m_vertices[i]->m_pos.Set((float)points[i*3],(float)points[i*3+1],(float)points[i*3+2]);
 
-			pv = _vertices[i]->_pos;
+			pv = m_vertices[i]->m_pos;
 		
-			_min.Set(MIN(_min.GetX(),pv.GetX()),MIN(_min.GetY(),pv.GetY()),MIN(_min.GetZ(),pv.GetZ()));
-			_max.Set(MAX(_max.GetX(),pv.GetX()),MAX(_max.GetY(),pv.GetY()),MAX(_max.GetZ(),pv.GetZ()));
+			m_min.Set(MIN(m_min.GetX(),pv.GetX()),MIN(m_min.GetY(),pv.GetY()),MIN(m_min.GetZ(),pv.GetZ()));
+			m_max.Set(MAX(m_max.GetX(),pv.GetX()),MAX(m_max.GetY(),pv.GetY()),MAX(m_max.GetZ(),pv.GetZ()));
 		}
 
 		//Calculate Bounding Sphere
-		_spherecenter.LinearlyInterpolate(_min,_max,0.5);
+		m_spherecenter.LinearlyInterpolate(m_min,m_max,0.5);
 		CVector3f diagonal;
-		diagonal.Sub(_max,_min);
-		_sphereradius = diagonal.GetLength()*0.5;
+		diagonal.Sub(m_max,m_min);
+		m_sphereradius = (float)(diagonal.GetLength()*0.5);
 	}
 
 	//Multiple Sub Geometries
 	else
 	{
-		std::vector<TXGeometry*>::iterator sgit = _subgeometries.begin();
+		std::vector<TXGeometry*>::iterator sgit = m_subgeometries.begin();
 		ULONG i=0;
-		for(;sgit<_subgeometries.end();sgit++)
+		for(;sgit<m_subgeometries.end();sgit++)
 		{
-			(*sgit)->_min.Set(FLT_MAX, FLT_MAX, FLT_MAX);
-			(*sgit)->_max.Set(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+			(*sgit)->m_min.Set(FLT_MAX, FLT_MAX, FLT_MAX);
+			(*sgit)->m_max.Set(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
-			for(ULONG v=0;v<(*sgit)->_nbv;v++)
+			for(ULONG v=0;v<(*sgit)->m_nbv;v++)
 			{
 				if(clear)
-					_vertices[i] = new TXVertex(i,(float)points[i*3],(float)points[i*3+1],(float)points[i*3+2]);
+					m_vertices[i] = new TXVertex(i,(float)points[i*3],(float)points[i*3+1],(float)points[i*3+2]);
 				else
-					_vertices[i]->_pos.Set((float)points[i*3],(float)points[i*3+1],(float)points[i*3+2]);
+					m_vertices[i]->m_pos.Set((float)points[i*3],(float)points[i*3+1],(float)points[i*3+2]);
 
-				pv = _vertices[i]->_pos;
+				pv = m_vertices[i]->m_pos;
 			
-				(*sgit)->_min.Set(MIN((*sgit)->_min.GetX(),pv.GetX()),MIN((*sgit)->_min.GetY(),pv.GetY()),MIN((*sgit)->_min.GetZ(),pv.GetZ()));
-				(*sgit)->_max.Set(MAX((*sgit)->_max.GetX(),pv.GetX()),MAX((*sgit)->_max.GetY(),pv.GetY()),MAX((*sgit)->_max.GetZ(),pv.GetZ()));
+				(*sgit)->m_min.Set(
+					MIN((*sgit)->m_min.GetX(),pv.GetX()),
+					MIN((*sgit)->m_min.GetY(),pv.GetY()),
+					MIN((*sgit)->m_min.GetZ(),pv.GetZ())
+				);
 
-				_min.Set(MIN(_min.GetX(),pv.GetX()),MIN(_min.GetY(),pv.GetY()),MIN(_min.GetZ(),pv.GetZ()));
-				_max.Set(MAX(_max.GetX(),pv.GetX()),MAX(_max.GetY(),pv.GetY()),MAX(_max.GetZ(),pv.GetZ()));
+				(*sgit)->m_max.Set(
+					MAX((*sgit)->m_max.GetX(),pv.GetX()),
+					MAX((*sgit)->m_max.GetY(),pv.GetY()),
+					MAX((*sgit)->m_max.GetZ(),pv.GetZ())
+				);
+
+				m_min.Set(
+					MIN(m_min.GetX(),pv.GetX()),
+					MIN(m_min.GetY(),pv.GetY()),
+					MIN(m_min.GetZ(),pv.GetZ())
+				);
+
+				m_max.Set(
+					MAX(m_max.GetX(),pv.GetX()),
+					MAX(m_max.GetY(),pv.GetY()),
+					MAX(m_max.GetZ(),pv.GetZ())
+				);
 				i++;
 			}
 
 			//Calculate Bounding Sphere
-			(*sgit)->_spherecenter.LinearlyInterpolate((*sgit)->_min,(*sgit)->_max,0.5);
+			(*sgit)->m_spherecenter.LinearlyInterpolate((*sgit)->m_min,(*sgit)->m_max,0.5);
 			CVector3f radii;
-			radii.Sub((*sgit)->_max,(*sgit)->_spherecenter);
-			(*sgit)->_sphereradius = radii.GetLength();
+			radii.Sub((*sgit)->m_max,(*sgit)->m_spherecenter);
+			(*sgit)->m_sphereradius = radii.GetLength();
 		}
 	}
 }
 
 void TXGeometry::GetRuntimeMeshData(CICEGeometry& geom)
 {
-	// loop over triangles and get them normal
+	// Query Dirty States to know what to update
+	GetDirtyState( geom);
+
+	// Get Triangles Normals
 	LONG tCount = geom.GetTriangleCount();
 	CLongArray tIndices;
 	geom.GetTrianglePointIndices(tIndices);
@@ -310,68 +459,120 @@ void TXGeometry::GetRuntimeMeshData(CICEGeometry& geom)
 
 	for (LONG i=0; i<tCount; i++)
 	{
-		// Get Normal
-		a.Sub(_vertices[tIndices[i*3]]->_pos,_vertices[tIndices[i*3+1]]->_pos);
-		b.Sub(_vertices[tIndices[i*3]]->_pos,_vertices[tIndices[i*3+2]]->_pos);
-		_triangles[i]->_norm.Cross(a,b);
-		_triangles[i]->_norm.NormalizeInPlace();
-		c.Sub(_view,_vertices[tIndices[i*3]]->_pos);
-		_triangles[i]->_facing = (c.Dot(_triangles[i]->_norm)>0);
+		a.Sub(m_vertices[tIndices[i*3]]->m_pos,m_vertices[tIndices[i*3+1]]->m_pos);
+		b.Sub(m_vertices[tIndices[i*3]]->m_pos,m_vertices[tIndices[i*3+2]]->m_pos);
+		m_triangles[i]->m_norm.Cross(a,b);
+		m_triangles[i]->m_norm.NormalizeInPlace();
+		c.Sub(m_view,m_vertices[tIndices[i*3]]->m_pos);
+		m_triangles[i]->m_facing = (c.Dot(m_triangles[i]->m_norm)>0);
 	}
 
-	//loop vertices calculating normal
+	// Get Vertex Normals
 	std::vector<TXTriangle*> t;
 	CVector3f n;
 	LONG nbt;
-	for(LONG i=0;i<_visiblevertices.size();i++)
+	std::vector<TXVertex*>::iterator vv = m_visiblevertices.begin();
+	for(;vv != m_visiblevertices.end();vv++)
 	{
 		n.SetNull();
-		t = _visiblevertices[i]->_triangles;
+		t = (*vv)->m_triangles;
 		nbt = (long)t.size();
 		for(LONG j=0;j<nbt;j++)
 		{
-			n += t[j]->_norm;
+			n += t[j]->m_norm;
 		}
 		n.NormalizeInPlace();
-		_visiblevertices[i]->_norm = n;
+		(*vv)->m_norm = n;
+		(*vv)->IsCrease();
 	}
+
+	//BuildKDTree();
 }
 
 void TXGeometry::GetCreaseEdges(float crease)
 {
-	_creases.clear();
+	m_creases.clear();
 	TXEdge* ed = NULL;
 	//get crease edges
-	for(ULONG e=0;e<_visibleedges.size();e++)
+	for(ULONG e=0;e<m_visibleedges.size();e++)
 	{
-		ed = _visibleedges[e];
-		if(!ed->_isboundary)
+		ed = m_visibleedges[e];
+		if(!ed->m_isboundary)
 		{
-			float angle = ed->_triangles[0]->_norm.GetAngle(ed->_triangles[1]->_norm);
+			float angle = ed->m_triangles[0]->m_norm.GetAngle(ed->m_triangles[1]->m_norm);
 
 			if(abs(angle)>crease)
 			{
-				ed->_iscrease = true;
-				_creases.push_back(ed);
+				ed->m_iscrease = true;
+				m_creases.push_back(ed);
 			}
 			else
-				ed->_iscrease = false;
+				ed->m_iscrease = false;
 		}
 	}
-	_creasecached = true;
+	m_creasecached = true;
+}
+
+void TXGeometry::GetIntersectionEdges()
+{
+	m_intersections.clear();
+	ULONG nbSubGeometries = m_subgeometries.size();
+	ULONG current = 0;
+
+	// Intersections works ONLY with Group Geometry
+	if(nbSubGeometries>0)
+	{
+		TXGeometry* geo1;
+		TXGeometry* geo2;
+
+		std::vector<TXTriangle*>::iterator t;
+		std::vector<TXEdge*>::iterator e;
+		bool intersect;
+		while(current<nbSubGeometries)
+		{
+			geo1 = m_subgeometries[current];
+			for(ULONG i=0;i<nbSubGeometries;i++)
+			{
+				geo2 = m_subgeometries[i];
+				if(geo1->m_id == geo2->m_id)continue;
+				
+				// We NEED to check first for Bounding Box Collision
+				for(e = geo1->m_edges.begin();e<geo1->m_edges.end();e++)
+				{
+					intersect = false;
+					
+					for(t = geo2->m_triangles.begin();t<geo2->m_triangles.end();t++)
+					{
+						if((*e)->IntersectWithTriangle((*t)))
+						{
+							m_intersections.push_back(*e);
+
+							intersect = true;
+							//Application().LogMessage(L"Edge ID "+(CString)(*e)->_id+L" is Intersection Edge"+(CString)(*e)->_isintersection);
+							break;
+						}
+					}
+					(*e)->m_isintersection = intersect;
+				}
+			}
+			current++;
+		}
+
+	}
+	//Application().LogMessage(L"Get Intersections called...");
 }
 
 void TXGeometry::GetDotAndSign(CVector3f& view, float bias)
 {
 	CVector3f c;
 	// loop over all vertices getting dot and sign
-	for(ULONG i=0;i<_nbvv;i++)
+	for(ULONG i=0;i<m_nbvv;i++)
 	{
-		c.Sub(view,_visiblevertices[i]->_pos);
+		c.Sub(view,m_visiblevertices[i]->m_pos);
 		c.NormalizeInPlace();
-		_visiblevertices[i]->_dot = c.Dot(_visiblevertices[i]->_norm) - bias;
-		if(_visiblevertices[i]->_dot>=0)_visiblevertices[i]->_sign = 1;
-		else _visiblevertices[i]->_sign = -1;
+		m_visiblevertices[i]->m_dot = c.Dot(m_visiblevertices[i]->m_norm) - bias;
+		if(m_visiblevertices[i]->m_dot>=0)m_visiblevertices[i]->m_sign = 1;
+		else m_visiblevertices[i]->m_sign = -1;
 	}
 }
 
@@ -380,26 +581,26 @@ void TXGeometry::GetVisible(TXCamera* camera)
 	ClearVisible();
 
 	bool multi = false;
-	if(_subgeometries.size()>0)multi = true;
+	if(m_subgeometries.size()>0)multi = true;
 
 	if(!multi)
 	{
-		_infrustrum = camera->GeometryInFrustrum(this);
+		m_infrustrum = camera->GeometryInFrustrum(this);
 	
 		//Intersect
-		if(_infrustrum == 1)
+		if(m_infrustrum == 1)
 		{
-			for(ULONG p=0;p<_nbv;p++)
+			for(ULONG p=0;p<m_nbv;p++)
 			{
-				if(camera->PointInFrustrum(_vertices[p]->_pos))
+				if(camera->PointInFrustrum(m_vertices[p]->m_pos))
 				{
-					_visiblevertices.push_back(_vertices[p]);
-					_vertices[p]->SetVisible(true);
-					_nbvv++;
+					m_visiblevertices.push_back(m_vertices[p]);
+					m_vertices[p]->SetVisible(true);
+					m_nbvv++;
 				}
 			}
 		}
-		else if(_infrustrum == 2)
+		else if(m_infrustrum == 2)
 		{
 			SetAllVisible();
 		}
@@ -407,21 +608,21 @@ void TXGeometry::GetVisible(TXCamera* camera)
 
 	else
 	{
-		std::vector<TXGeometry*>::iterator git=_subgeometries.begin();
+		std::vector<TXGeometry*>::iterator git=m_subgeometries.begin();
 		ULONG vid = 0;
-		for(;git<_subgeometries.end();git++)
+		for(;git<m_subgeometries.end();git++)
 		{
-			(*git)->_infrustrum = camera->GeometryInFrustrum(*git);
-			if((*git)->_infrustrum)
+			(*git)->m_infrustrum = camera->GeometryInFrustrum(*git);
+			if((*git)->m_infrustrum)
 			{
 				//Inside Frustrum : All Points Visible
-				if((*git)->_infrustrum == INSIDE)
+				if((*git)->m_infrustrum == INSIDE)
 				{
-					for(int i=0;i<(*git)->_nbv;i++)
+					for(ULONG i=0;i<(*git)->m_nbv;i++)
 					{
-						_visiblevertices.push_back(_vertices[vid]);
-						_vertices[vid]->SetVisible(true);
-						_nbvv++;
+						m_visiblevertices.push_back(m_vertices[vid]);
+						m_vertices[vid]->SetVisible(true);
+						m_nbvv++;
 						vid++;
 					}
 				}
@@ -429,13 +630,13 @@ void TXGeometry::GetVisible(TXCamera* camera)
 				// Idealy we would have one Octree per SubGeometries for even faster parsing
 				else
 				{
-					for(int i=0;i<(*git)->_nbv;i++)
+					for(ULONG i=0;i<(*git)->m_nbv;i++)
 					{
-						if(camera->PointInFrustrum(_vertices[vid]->_pos))
+						if(camera->PointInFrustrum(m_vertices[vid]->m_pos))
 						{
-							_visiblevertices.push_back(_vertices[vid]);
-							_vertices[vid]->SetVisible(true);
-							_nbvv++;
+							m_visiblevertices.push_back(m_vertices[vid]);
+							m_vertices[vid]->SetVisible(true);
+							m_nbvv++;
 						}
 						vid++;
 					}
@@ -444,7 +645,7 @@ void TXGeometry::GetVisible(TXCamera* camera)
 			// Ouside Frustrum : Discard All Points
 			else
 			{
-				vid += (*git)->_nbv;
+				vid += (*git)->m_nbv;
 			}
 		}
 	}
@@ -452,27 +653,27 @@ void TXGeometry::GetVisible(TXCamera* camera)
 	CLongArray change;
 	//loop over all edges
 	std::vector<TXEdge*>::iterator ei;
-	for(ei=_edges.begin();ei<_edges.end();ei++)
+	for(ei=m_edges.begin();ei<m_edges.end();ei++)
 	{
-		if((*ei)->_start->_visible || (*ei)->_end->_visible)
+		if((*ei)->m_start->m_visible || (*ei)->m_end->m_visible)
 		{
-			if(!(*ei)->_start->_visible) 
-				change.Add((*ei)->_start->_id);
-			if(!(*ei)->_end->_visible) 
-				change.Add((*ei)->_end->_id);
+			if(!(*ei)->m_start->m_visible) 
+				change.Add((*ei)->m_start->m_id);
+			if(!(*ei)->m_end->m_visible) 
+				change.Add((*ei)->m_end->m_id);
 
-			_visibleedges.push_back(*ei);
-			(*ei)->_isvisible = true;
-			_nbve++;
+			m_visibleedges.push_back(*ei);
+			(*ei)->m_isvisible = true;
+			m_nbve++;
 		}
 	}
 
 	//Enable vertices connected to a visible edge
 	for(LONG e=0;e<change.GetCount();e++)
 	{
-		_vertices[change[e]]->_visible = true;
-		_visiblevertices.push_back(_vertices[change[e]]);
-		_nbvv++;
+		m_vertices[change[e]]->m_visible = true;
+		m_visiblevertices.push_back(m_vertices[change[e]]);
+		m_nbvv++;
 	}
 	
 }
@@ -492,40 +693,40 @@ bool TXGeometry::GetBBoxVisibility(TXCamera* camera)
 */
 void TXGeometry::ClearVisible()
 {
-	_visibleedges.clear();
-	_visiblevertices.clear();
+	m_visibleedges.clear();
+	m_visiblevertices.clear();
 
-	_nbvv = 0;
-	_nbve = 0;
+	m_nbvv = 0;
+	m_nbve = 0;
 
-	std::vector<TXVertex*>::iterator vi = _vertices.begin();
-	for(;vi<_vertices.end();vi++)
+	std::vector<TXVertex*>::iterator vi = m_vertices.begin();
+	for(;vi<m_vertices.end();vi++)
 		(*vi)->SetVisible(false);
 
-	std::vector<TXEdge*>::iterator ei = _edges.begin();
-	for(;ei<_edges.end();ei++)
-		(*ei)->_isvisible = false;
+	std::vector<TXEdge*>::iterator ei = m_edges.begin();
+	for(;ei<m_edges.end();ei++)
+		(*ei)->m_isvisible = false;
 }
 
 void TXGeometry::SetAllVisible()
 {
-	_visiblevertices.clear();
-	_visibleedges.clear();
-	_nbvv = _nbv;
-	_nbve = _nbe;
+	m_visiblevertices.clear();
+	m_visibleedges.clear();
+	m_nbvv = m_nbv;
+	m_nbve = m_nbe;
 
-	std::vector<TXVertex*>::iterator vi = _vertices.begin();
-	for(;vi<_vertices.end();vi++)
+	std::vector<TXVertex*>::iterator vi = m_vertices.begin();
+	for(;vi<m_vertices.end();vi++)
 	{
-		_visiblevertices.push_back(*vi);
+		m_visiblevertices.push_back(*vi);
 		(*vi)->SetVisible(true);
 	}
 
-	std::vector<TXEdge*>::iterator ei = _edges.begin();
-	for(;ei<_edges.end();ei++)
+	std::vector<TXEdge*>::iterator ei = m_edges.begin();
+	for(;ei<m_edges.end();ei++)
 	{
-		_visibleedges.push_back(*ei);
-		(*ei)->_isvisible = true;
+		m_visibleedges.push_back(*ei);
+		(*ei)->m_isvisible = true;
 	}
 }
 
@@ -533,17 +734,26 @@ bool TXGeometry::IsSilhouette(TXEdge* e,CVector3f view, bool smooth)
 {
 	CVector3f c;
 
-	if(smooth  || e->_isboundary)
+	if(smooth  || e->m_isboundary)
 	{
-		if((e->_start->_sign + e->_end->_sign)== 0)
+		if((e->m_start->m_sign + e->m_end->m_sign)== 0)
 		{
-			e->_issilhouette = true;
-			if(e->_start->_isboundary && !e->_end->_isboundary)
-				e->_weight = 1;
-			else if(!e->_start->_isboundary && e->_end->_isboundary)
-				e->_weight = 0;
+			e->m_issilhouette = true;
+			if(e->m_start->m_iscrease && !e->m_end->m_iscrease)
+				e->m_weight = 1;
+
+			else if(!e->m_start->m_iscrease && e->m_end->m_iscrease)
+				e->m_weight = 0;
+
+			else if(e->m_start->m_iscrease && e->m_end->m_iscrease)
+			{
+				float d1 = e->m_start->m_norm.Dot(view);
+				float d2 = e->m_end->m_norm.Dot(view);
+				if(d1>d2)e->m_weight = 0;
+				else e->m_weight = 1;
+			}
 			else
-				e->_weight = ABS(e->_end->_dot)/(ABS(e->_start->_dot)+ABS(e->_end->_dot));
+				e->m_weight = ABS(e->m_end->m_dot)/(ABS(e->m_start->m_dot)+ABS(e->m_end->m_dot));
 			return true;
 		}
 	}
@@ -551,17 +761,17 @@ bool TXGeometry::IsSilhouette(TXEdge* e,CVector3f view, bool smooth)
 	{
 		float dot1, dot2;
 
-		c.LinearlyInterpolate(e->_start->_pos,e->_end->_pos,0.5);
+		c.LinearlyInterpolate(e->m_start->m_pos,e->m_end->m_pos,0.5);
 		c.Sub(view,c);
 		c.NormalizeInPlace();
-		dot1 = c.Dot(e->_triangles[0]->_norm);
-		dot2 = c.Dot(e->_triangles[1]->_norm);
-		e->_weight = 0.5;
+		dot1 = c.Dot(e->m_triangles[0]->m_norm);
+		dot2 = c.Dot(e->m_triangles[1]->m_norm);
+		e->m_weight = 0.5;
 
 		if(dot1*dot2<0/*||(_geom->_vertices[p1id]->_sign + _geom->_vertices[p2id]->_sign)== 0*/)
 		{
-			e->_weight = ABS(e->_end->_dot)/(ABS(e->_start->_dot)+ABS(e->_end->_dot));
-			e->_issilhouette = true;
+			e->m_weight = ABS(e->m_end->m_dot)/(ABS(e->m_start->m_dot)+ABS(e->m_end->m_dot));
+			e->m_issilhouette = true;
 			return true;
 		}
 	}
@@ -571,33 +781,49 @@ bool TXGeometry::IsSilhouette(TXEdge* e,CVector3f view, bool smooth)
 
 TXVertex::TXVertex(LONG id,float px, float py, float pz)
 {
-	_id = id;
-	_pos.Set(px,py,pz);
+	m_id = id;
+	m_pos.Set(px,py,pz);
 }
 
 TXVertex::~TXVertex()
 {
 }
 
+void TXVertex::IsCrease()
+{
+	std::vector<TXEdge*>::iterator it = m_edges.begin();
+	float dot;
+	for(;it!=m_edges.end();it++)
+	{
+		dot = (*it)->GetDot(this);
+		if(abs(dot)>0.5)
+		{	
+			m_iscrease = true;
+			return;
+		}
+	}
+	m_iscrease = false;
+}
+
 bool TXVertex::IsInCell(const CVector3f& min, const CVector3f& max)
 {
-	if(_pos.GetX()>=min.GetX() && _pos.GetX()<max.GetX()&&
-		_pos.GetY()>=min.GetY() && _pos.GetY()<max.GetY()&&
-		_pos.GetZ()>=min.GetZ() && _pos.GetZ()<max.GetZ())return true;
+	if(m_pos.GetX()>=min.GetX() && m_pos.GetX()<max.GetX()&&
+		m_pos.GetY()>=min.GetY() && m_pos.GetY()<max.GetY()&&
+		m_pos.GetZ()>=min.GetZ() && m_pos.GetZ()<max.GetZ())return true;
 	return false;
 }
 
 TXEdge::TXEdge(LONG id,LONG p1, LONG p2)
 {
-	_id = id;
-	_pid.Resize(2);
-	_pid[0] = p1;
-	_pid[1] = p2;
-	_issilhouette = false;
-	_iscrease = false;
-	_isboundary = false;
-	_ischecked = false;
-	_weight = -1;
+	m_id = id;
+	m_pid.Resize(2);
+	m_pid[0] = p1;
+	m_pid[1] = p2;
+	m_issilhouette = false;
+	m_iscrease = false;
+	m_isboundary = false;
+	m_ischecked = false;
+	m_weight = -1;
 }
 
 TXEdge::~TXEdge()
@@ -610,14 +836,14 @@ void TXEdge::GetNeighborEdges()
 	std::vector<TXEdge*> e;
 	std::vector<TXEdge*>::iterator ei;
 
-	for(pi=_polygons.begin();pi<_polygons.end();pi++)
+	for(pi=m_polygons.begin();pi<m_polygons.end();pi++)
 	{
-		e = (*pi)->_edges;
+		e = (*pi)->m_edges;
 		for(ei=e.begin();ei<e.end();ei++)
 		{
-			if((*ei)->_id != _id)
+			if((*ei)->m_id != m_id)
 			{
-				_neighbors.push_back(*ei);
+				m_neighbors.push_back(*ei);
 			}
 		}
 	}
@@ -630,17 +856,17 @@ void TXEdge::GetNextEdges()
 	std::vector<TXEdge*> e;
 	std::vector<TXPolygon*>::iterator ip;
 	std::vector<TXEdge*>::iterator ie;
-	for(ip= _polygons.begin();ip<_polygons.end();ip++)
+	for(ip= m_polygons.begin();ip<m_polygons.end();ip++)
 	{
-		e = (*ip)->_edges;
+		e = (*ip)->m_edges;
 		for(ie=e.begin();ie<e.end();ie++)
 		{
-			adjacents.Add((*ie)->_id);
+			adjacents.Add((*ie)->m_id);
 		}
 	}
 
 	//Get Next Edges
-	std::vector<TXEdge*> n = _end->_edges;
+	std::vector<TXEdge*> n = m_end->m_edges;
 	bool isAdjacent = false;
 	float angle = 0.0;
 	CVector3f a, b;
@@ -650,12 +876,12 @@ void TXEdge::GetNextEdges()
 	// Store only ONE non-adjacent edge with maximal angle
 	for(std::vector<TXEdge*>::iterator ie=n.begin();ie<n.end();ie++)
 	{
-		if((*ie)->_id == _id)continue;
+		if((*ie)->m_id == m_id)continue;
 
 		isAdjacent = false;
 		for(LONG ia=0;ia<adjacents.GetCount();ia++)
 		{
-			if((*ie)->_id == adjacents[ia])
+			if((*ie)->m_id == adjacents[ia])
 			{
 				isAdjacent = true;
 				break;
@@ -664,11 +890,11 @@ void TXEdge::GetNextEdges()
 
 		if(!isAdjacent)
 		{
-			a.Sub(_start->_pos,_end->_pos);
-			if((*ie)->_pid[0] == _pid[1])
-				b.Sub((*ie)->_end->_pos,(*ie)->_start->_pos);
+			a.Sub(m_start->m_pos,m_end->m_pos);
+			if((*ie)->m_pid[0] == m_pid[1])
+				b.Sub((*ie)->m_end->m_pos,(*ie)->m_start->m_pos);
 			else
-				b.Sub((*ie)->_start->_pos,(*ie)->_end->_pos);
+				b.Sub((*ie)->m_start->m_pos,(*ie)->m_end->m_pos);
 
 			a.NormalizeInPlace();
 			b.NormalizeInPlace();
@@ -684,22 +910,22 @@ void TXEdge::GetNextEdges()
 
 	if( next)
 	{
-		_next.push_back(next);
+		m_next.push_back(next);
 	}
 
 	//Get Previous Edges
-	n = _start->_edges;
+	n = m_start->m_edges;
 	angle = 0.0;
 	next = NULL;
 	
 	for(std::vector<TXEdge*>::iterator ip = n.begin();ip<n.end();ip++)
 	{
 		isAdjacent = false;
-		if((*ip)->_id == _id)continue;
+		if((*ip)->m_id == m_id)continue;
 
 		for(LONG ia=0;ia<adjacents.GetCount();ia++)
 		{
-			if((*ip)->_id == adjacents[ia])
+			if((*ip)->m_id == adjacents[ia])
 			{
 				isAdjacent = true;
 			}
@@ -707,11 +933,11 @@ void TXEdge::GetNextEdges()
 		
 		if(!isAdjacent)
 		{
-			a.Sub(_end->_pos,_start->_pos);
-			if((*ip)->_pid[0] == _pid[0])
-				b.Sub((*ip)->_end->_pos,(*ip)->_start->_pos);
+			a.Sub(m_end->m_pos,m_start->m_pos);
+			if((*ip)->m_pid[0] == m_pid[0])
+				b.Sub((*ip)->m_end->m_pos,(*ip)->m_start->m_pos);
 			else
-				b.Sub((*ip)->_start->_pos,(*ip)->_end->_pos);
+				b.Sub((*ip)->m_start->m_pos,(*ip)->m_end->m_pos);
 
 			a.NormalizeInPlace();
 			b.NormalizeInPlace();
@@ -726,7 +952,7 @@ void TXEdge::GetNextEdges()
 	}
 	if( next)
 	{
-		_next.push_back(next);
+		m_next.push_back(next);
 	}
 }
 
@@ -737,26 +963,26 @@ void TXEdge::GetAdjacentEdges()
 	float angle;
 
 	//search for edges adjacent to first vertex
-	e = _start->_edges;
+	e = m_start->m_edges;
 	for(ei=e.begin();ei<e.end();ei++)
 	{
-		if((*ei)->_id != _id)
+		if((*ei)->m_id != m_id)
 		{
-			_adjacents.push_back(*ei);
+			m_adjacents.push_back(*ei);
 			angle = GetAngle(*ei);
-			_angles.Add(angle);
+			m_angles.Add(angle);
 		}
 	}
 
 	//search for edges adjacent to second vertex
-	e = _end->_edges;
+	e = m_end->m_edges;
 	for(ei=e.begin();ei<e.end();ei++)
 	{
-		if((*ei)->_id != _id)
+		if((*ei)->m_id != m_id)
 		{
-			_adjacents.push_back(*ei);
+			m_adjacents.push_back(*ei);
 			angle = GetAngle(*ei);
-			_angles.Add(angle);
+			m_angles.Add(angle);
 		}
 	}
 }
@@ -766,13 +992,13 @@ float TXEdge::GetAngle(TXEdge* other)
 	ULONG p1,p2,p3,p4;
 	CVector3f v1, v2;
 
-	p1 = _pid[0];
-	p2 = _pid[1];
-	p3 = other->_pid[0];
-	p4 = other->_pid[1];
+	p1 = m_pid[0];
+	p2 = m_pid[1];
+	p3 = other->m_pid[0];
+	p4 = other->m_pid[1];
 
-	v1.Sub(_start->_pos,_end->_pos);
-	v2.Sub(other->_start->_pos,other->_end->_pos);
+	v1.Sub(m_start->m_pos,m_end->m_pos);
+	v2.Sub(other->m_start->m_pos,other->m_end->m_pos);
 
 	if(p1 == p4 )v1.NegateInPlace();
 	else if(p4 == p1)v2.NegateInPlace();
@@ -781,21 +1007,44 @@ float TXEdge::GetAngle(TXEdge* other)
 	return angle;
 }
 
+float TXEdge::GetAngle(TXVertex* v)
+{
+	CVector3f dir;
+	if(v->m_id == m_start->m_id)
+		dir.Sub(m_end->m_pos,v->m_pos);
+	else
+		dir.Sub(m_start->m_pos,v->m_pos);
+	float angle = v->m_norm.GetAngle(dir);
+	return angle;
+}
+
+float TXEdge::GetDot(TXVertex* v)
+{
+	CVector3f dir;
+	if(v->m_id == m_start->m_id)
+		dir.Sub(m_end->m_pos,v->m_pos);
+	else
+		dir.Sub(m_start->m_pos,v->m_pos);
+	float dot = v->m_norm.Dot(dir);
+	return dot;
+}
+
+
 
 ULONG TXEdge::GetIDInTriangle(TXTriangle* t)
 {
 	for(ULONG i=0;i<3;i++)
 	{
-		if((t->_pid[i] == _pid[0] && t->_pid[(i+1)%3] == _pid[1])||
-			(t->_pid[i] == _pid[1] && t->_pid[(i+1)%3] == _pid[0]))return i;
+		if((t->m_pid[i] == m_pid[0] && t->m_pid[(i+1)%3] == m_pid[1])||
+			(t->m_pid[i] == m_pid[1] && t->m_pid[(i+1)%3] == m_pid[0]))return i;
 	}
 	return 0;
 }
 
 
-bool TXEdge::ShareTriangle(TXEdge*& other)
+bool TXEdge::ShareTriangle(TXEdge* other)
 {
-	std::vector<TXTriangle*> t = _triangles;
+	std::vector<TXTriangle*> t = m_triangles;
 
 	for(LONG z=0;z<(LONG)t.size();z++)
 	{
@@ -805,39 +1054,51 @@ bool TXEdge::ShareTriangle(TXEdge*& other)
 	return false;
 }
 
-bool TXEdge::IsInTriangle(TXTriangle*& t)
+bool TXEdge::IsInTriangle(TXTriangle* t)
 {
 	LONG cnt = 0;
 	for(LONG y=0;y<3;y++)
 	{
-		if(t->_pid[y] == _pid[0] || t->_pid[y] == _pid[1])cnt++;
+		if(t->m_pid[y] == m_pid[0] || t->m_pid[y] == m_pid[1])cnt++;
 	}
 	if(cnt == 2)return true;
 	return false;
 }
 
+bool TXEdge::IsConnectedToTriangle(TXTriangle* t)
+{
+	for(LONG y=0;y<3;y++)
+	{
+		if(t->m_pid[y] == m_pid[0] || t->m_pid[y] == m_pid[1])return true;
+	}
+	return false;
+}
+
 LONG TXEdge::SharePoint(TXEdge*& other)
 {
-	if(_pid[0] == other->_pid[0] || _pid[0] == other->_pid[1]) return 1;
-	else if(_pid[1] == other->_pid[0] || _pid[1] == other->_pid[1]) return 2;
+	if(m_pid[0] == other->m_pid[0] || m_pid[0] == other->m_pid[1]) return 1;
+	else if(m_pid[1] == other->m_pid[0] || m_pid[1] == other->m_pid[1]) return 2;
 	else return 0;
 }
 
 bool TXEdge::Check(LONG lineid)
 {
-	if(_ischecked)return false;
+	if(m_ischecked)return false;
+
+	// intersection
+	if(lineid == INTERSECTION)return m_isintersection;
 
 	//cluster
-	if(lineid == CLUSTER)return _isclusteredge;
+	else if(lineid == CLUSTER)return m_isclusteredge;
 
 	//boundary
-	else if(lineid == BOUNDARY)return _isboundary;
+	else if(lineid == BOUNDARY)return m_isboundary;
 
 	//crease
-	else if(lineid == CREASE)return _iscrease;
+	else if(lineid == CREASE)return m_iscrease;
 
 	//silhouettes
-	else return _issilhouette;
+	else return m_issilhouette;
 }
 
 // edge touch cell if ONE of its points is inside cell
@@ -851,9 +1112,11 @@ bool TXEdge::TouchCell(const CVector3f& minp, const CVector3f& maxp)
 		Application().LogMessage(L"Edge ID "+(CString)_id +L":("+(CString)_start->_pos.GetX()+L","+(CString)_start->_pos.GetY()+L","+(CString)_start->_pos.GetZ()+L")");
 	}
 	*/
-	if(_start->IsInCell(minp, maxp))return true;
-	if(_end->IsInCell(minp,maxp))return true;
-	return false;
+	if(m_start->IsInCell(minp, maxp))return true;
+	if(m_end->IsInCell(minp,maxp))return true;
+	TXBBox bbox(minp,maxp);
+	return IntersectWithBBox(&bbox);
+
 	/*
 	int m = 4;
 
@@ -879,20 +1142,86 @@ bool TXEdge::TouchCell(const CVector3f& minp, const CVector3f& maxp)
 	*/
 }
 
+bool TXEdge::IntersectWithBBox(TXBBox* in_bbox)
+{
+	Application().LogMessage(L"Edge Intersect With BBox Called...");
+	return false;
+}
+
+bool TXEdge::IntersectWithTriangle(TXTriangle* in_triangle)
+{
+	//Check Intersection with the plane of the triangle
+	CVector3f p;
+	CVector3f intersection;
+
+	p.Sub(m_start->m_pos,in_triangle->m_v[0]->m_pos);
+	float distance1 = p.Dot(in_triangle->m_norm);
+	p.Sub(m_end->m_pos,in_triangle->m_v[0]->m_pos);
+	float distance2 = p.Dot(in_triangle->m_norm);
+	if((distance1 > 0 && distance2 < 0) || (distance1 < 0 && distance2 > 0))
+	{
+		m_weight = 1-(fabs(distance1) / (fabs(distance1) + fabs(distance2)));
+		//Application().LogMessage(L" Weight : "+(CString)_weight);
+		intersection.LinearlyInterpolate(m_start->m_pos, m_end->m_pos, m_weight);
+	}
+	else return false;
+
+	// Get UV from Point
+	TXTriangle::uvCoord uv = in_triangle->GetUVFromPoint(intersection);
+	//Application().LogMessage(L"UV : "+(CString)uv._u+L","+(CString)uv._v);
+   if(!uv.IsOnTriangle())
+	  return false;
+   return true;
+}
+
 
 TXTriangle::TXTriangle(LONG id,LONG p1, LONG p2, LONG p3)
 {
-	_id = id;
-	_pid.Resize(3);
-	_pid[0] = p1;
-	_pid[1] = p2;
-	_pid[2] = p3;
+	m_id = id;
+	m_pid.Resize(3);
+	m_pid[0] = p1;
+	m_pid[1] = p2;
+	m_pid[2] = p3;
+}
+
+bool TXTriangle::IsVisible()
+{
+	for(int i=0;i<3;i++)
+	{
+		if((*m_v[i]).IsVisible())return true;
+	}
+	return false;
+}
+
+TXTriangle::uvCoord TXTriangle::GetUVFromPoint(const CVector3f & in_pos)
+{
+   // Compute vectors
+   CVector3f v0,v1,v2;
+   v0.Sub(m_v[2]->m_pos,m_v[0]->m_pos);
+   v1.Sub(m_v[1]->m_pos,m_v[0]->m_pos);
+   v2.Sub(in_pos,m_v[0]->m_pos);
+
+   // Compute dot products
+   float dot00 = v0.Dot(v0);
+   float dot01 = v0.Dot(v1);
+   float dot02 = v0.Dot(v2);
+   float dot11 = v1.Dot(v1);
+   float dot12 = v1.Dot(v2);
+
+   // Compute barycentric coordinates
+   float invDenom = 1.0f / (dot00 * dot11 - dot01 * dot01);
+
+   // pack into struct
+   uvCoord uv;
+   uv.m_u = (dot11 * dot02 - dot01 * dot12) * invDenom;
+   uv.m_v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+   return uv;
 }
 
 TXPolygon::TXPolygon(LONG id, XSI::CLongArray pid)
 {
-	_id = id;
-	_pid = pid;
+	m_id = id;
+	m_pid = pid;
 }
 
 TXPolygon::~TXPolygon()
@@ -902,21 +1231,21 @@ TXPolygon::~TXPolygon()
 void TXPolygon::PushEdgeData(TXEdge*& edge)
 {
 	// if edge already in _edges return
-	for(LONG v=0;v<(LONG)_edges.size();v++)
+	for(LONG v=0;v<(LONG)m_edges.size();v++)
 	{
-		if(_edges[v]->_id == edge->_id)return;
+		if(m_edges[v]->m_id == edge->m_id)return;
 	}
 
 	// check if edge belong to polygon
 	LONG cnt = 0;
-	for(LONG v=0;v<(LONG)_pid.GetCount();v++)
+	for(LONG v=0;v<(LONG)m_pid.GetCount();v++)
 	{
-		if(_pid[v] == edge->_pid[0]|| _pid[v] == edge->_pid[1])cnt++;
+		if(m_pid[v] == edge->m_pid[0]|| m_pid[v] == edge->m_pid[1])cnt++;
 	}
 	if(cnt == 2)
 	{
-		_edges.push_back(edge);
-		edge->_polygons.push_back(this);
+		m_edges.push_back(edge);
+		edge->m_polygons.push_back(this);
 	}
 }
 

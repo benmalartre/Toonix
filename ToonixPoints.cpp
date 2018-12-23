@@ -88,12 +88,12 @@ XSIPLUGINCALLBACK CStatus ToonixPoints_BeginEvaluate( ICENodeContext& in_ctxt )
 
 	else
 	{
-		points->_nbp = (ULONG)line->_chains.size();
+		points->_nbp = (ULONG)line->m_chains.size();
 		points->_pos.resize(points->_nbp);
 
 		for(ULONG i=0;i<points->_nbp;i++)
 		{
-			points->_pos[i] = line->_chains[i]->_points.front()->_pos;
+			points->_pos[i] = line->m_chains[i]->m_points.front()->m_pos;
 		}
 
 		in_ctxt.PutNumberOfElementsToProcess(points->_nbp);

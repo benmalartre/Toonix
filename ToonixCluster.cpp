@@ -2,6 +2,7 @@
 //------------------------------------------------
 #include "ToonixRegister.h"
 #include "ToonixData.h"
+#include "ToonixCommon.h"
 
 // Defines port, group and map identifiers used for registering the ICENode
 enum IDs
@@ -19,16 +20,6 @@ enum IDs
 	ID_CTXT_CNS,
 	ID_UNDEF = ULONG_MAX
 };
-
-void CleanUpClusterData(Context& in_ctxt)
-{
-	if(!in_ctxt.GetUserData().IsEmpty())
-	{
-		TXLine* line = (TXLine*)(CValue::siPtrType)in_ctxt.GetUserData( );
-		delete line;
-		in_ctxt.PutUserData((CValue::siPtrType)NULL);
-	}
-}
 
 bool GetClusterDirtyState(ICENodeContext& in_ctxt )
 {
@@ -115,7 +106,7 @@ SICALLBACK ToonixCluster_Evaluate( ICENodeContext& in_ctxt )
 	ULONG nSizeToonixData;
 	ToonixData.GetData( 0,(const CDataArrayCustomType::TData**)&pBufferToonixData, nSizeToonixData );
 	TXData* data = (TXData*)pBufferToonixData;
-	line->_geom = data->_geom;
+	line->m_geom = data->m_geom;
 
 	if(GetClusterDirtyState(in_ctxt))
 	{
@@ -126,35 +117,35 @@ SICALLBACK ToonixCluster_Evaluate( ICENodeContext& in_ctxt )
 		ULONG nbc = cluster.GetCount();
 		
 		CDataArrayFloat widthData(in_ctxt, ID_IN_Width);
-		line->_width = widthData[0];
+		line->m_width = widthData[0];
 
 		CDataArrayFloat breakData(in_ctxt, ID_IN_BreakAngle);
-		line->_break = (float)DegreesToRadians(breakData[0]);
+		line->m_break = (float)DegreesToRadians(breakData[0]);
 
 		CDataArrayFloat filterData(in_ctxt, ID_IN_FilterPoints);
-		line->_filterpoints = filterData[0];
+		line->m_filterpoints = filterData[0];
 
 		CDataArrayFloat extendData(in_ctxt, ID_IN_Extend);
-		line->_extend = extendData[0];
+		line->m_extend = extendData[0];
 		
 		TXEdge* pe;
-		line->_geom->_clusteredges.clear();
-		for(ULONG e=0;e<line->_geom->_edges.size();e++)
+		line->m_geom->m_clusteredges.clear();
+		for(ULONG e=0;e<line->m_geom->m_edges.size();e++)
 		{
-			pe = line->_geom->_edges[e];
-			if(pe->_id>=nbc)
+			pe = line->m_geom->m_edges[e];
+			if(pe->m_id>=nbc)
 			{
-				pe->_isclusteredge = false;
+				pe->m_isclusteredge = false;
 				continue;
 			}
-			if(cluster[pe->_id])
+			if(cluster[pe->m_id])
 			{
-				pe->_isclusteredge = true;
-				line->_geom->_clusteredges.push_back(pe);
+				pe->m_isclusteredge = true;
+				line->m_geom->m_clusteredges.push_back(pe);
 			}
 			else
 			{
-				pe->_isclusteredge = false;
+				pe->m_isclusteredge = false;
 			}
 		}
 		line->Build(CLUSTER);
@@ -182,17 +173,13 @@ SICALLBACK ToonixCluster_Evaluate( ICENodeContext& in_ctxt )
 
 SICALLBACK ToonixCluster_Init( CRef& in_ctxt )
 {
-	Context ctxt(in_ctxt);
-	// Build a new Line Object
-	TXLine* line = new TXLine();
-	ctxt.PutUserData((CValue::siPtrType)line);
+	InitTXLineData(in_ctxt);
 	return CStatus::OK;
 }
 
 
 SICALLBACK ToonixCluster_Term( CRef& in_ctxt )
 {
-	Context ctxt(in_ctxt);
-	CleanUpClusterData(ctxt);
+	CleanTXLineData(in_ctxt);
 	return CStatus::OK;
 }

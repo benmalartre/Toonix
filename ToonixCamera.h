@@ -1,7 +1,7 @@
-// ToonixData.h
+// ToonixCamera.h
 //-------------------------------------------------
-#ifndef _TOONIX_CAMERA_H_
-#define _TOONIX_CAMERA_H_
+#ifndef TOONIX_CAMERA_H
+#define TOONIX_CAMERA_H
 
 #include "ToonixRegister.h"
 #include "ToonixGeometry.h"
@@ -33,8 +33,8 @@ class TXCamera;
 class TXPlane
 {
 public:
-	CVector3f _norm, _pos;
-	float _d;
+	CVector3f m_norm, m_pos;
+	float m_d;
 
 	TXPlane::TXPlane(CVector3f& v1, CVector3f& b, CVector3f& c);
 	TXPlane::TXPlane(void);
@@ -52,23 +52,23 @@ public:
 class TXCamera
 {
 public:
-	std::vector<TXPlane> _planes;
-	std::vector<CVector3f> _limits;
+	std::vector<TXPlane> m_planes;
+	std::vector<CVector3f> m_limits;
 
 	// Camera Transform
-	CMatrix4f _mat;
-	CMatrix4f _proj;
-	CVector3f _scl;
-	CQuaternionf _quat;
-	CVector3f _pos;
-	CVector3f _forward, _side,_up;
+	CMatrix4f m_mat;
+	CMatrix4f m_proj;
+	CVector3f m_scl;
+	CQuaternionf m_quat;
+	CVector3f m_pos;
+	CVector3f m_forward, m_side,m_up;
 	
 	//float _planedistance;
 	//float _dot;
-	float _near, _far,_tan,_aspect,_fov;
+	float m_near, m_far,m_tan,m_aspect,m_fov;
 
-	CVector3f _ntl,_ntr,_nbl,_nbr,_ftl,_ftr,_fbl,_fbr,_nc,_fc;
-	float _nw,_nh,_fw,_fh;
+	CVector3f m_ntl,m_ntr,m_nbl,m_nbr,m_ftl,m_ftr,m_fbl,m_fbr,m_nc,m_fc;
+	float m_nw,m_nh,m_fw,m_fh;
 
 	void Set(const CMatrix4f& matrix, const float& fov, const float& aspect, const float& near,const float& far);
 	/*

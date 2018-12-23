@@ -16,23 +16,23 @@ public:
 	TXLight();
 	~TXLight(){};
 
-	TXGeometry* _geom;
-	std::vector<CVector3f> _vertices;
-	CLongArray _polygons;
+	TXGeometry* m_geom;
+	std::vector<CVector3f> m_vertices;
+	CLongArray m_polygons;
 	typedef std::map<int,int> VerticeMap;
-	VerticeMap _litvertices;
+	VerticeMap m_litvertices;
 
 	void Build();
 
-	ULONG _nbv;							// Number Output Vertices
-	ULONG _nbp;							// Length Output Polygonal Description
-	ULONG _nbl;							// Number of lights
-	std::vector<CVector3f> _lights;		// Lights Position
-	std::vector<float> _bias;			// Lights Bias
-	std::vector<float> _distance;		// Lights Distance
-	CVector3f _view;					// Camera Position
-	bool _reverse;
-	float _push;
+	ULONG m_nbv;							// Number Output Vertices
+	ULONG m_nbp;							// Length Output Polygonal Description
+	ULONG m_nbl;							// Number of lights
+	std::vector<CVector3f> m_lights;		// Lights Position
+	std::vector<float> m_bias;			// Lights Bias
+	std::vector<float> m_distance;		// Lights Distance
+	CVector3f m_view;					// Camera Position
+	bool m_reverse;
+	float m_push;
 
 	void CutTriangle(TXGeometry* geom,ULONG a, ULONG b, ULONG c);
 	void ClearDatas();

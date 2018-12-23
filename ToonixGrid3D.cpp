@@ -6,26 +6,26 @@
 
 TXGridTriangle::TXGridTriangle(TXTriangle *tp)
 {
-	_t = tp;
-	_n = _t->_norm;
+	m_t = tp;
+	m_n = m_t->m_norm;
 
 	CVector3f tmp;
-	tmp.Sub(_t->_v[0]->_pos,_t->_v[1]->_pos);
-	tmp.Cross(tmp,_n);
-	_en1.Normalize(tmp);
-	tmp.Sub(_t->_v[1]->_pos,_t->_v[2]->_pos);
-	tmp.Cross(tmp,_n);
-	_en2.Normalize(tmp);
-	tmp.Sub(_t->_v[2]->_pos,_t->_v[0]->_pos);
-	tmp.Cross(tmp,_n);
-	_en3.Normalize(tmp);
+	tmp.Sub(m_t->m_v[0]->m_pos,m_t->m_v[1]->m_pos);
+	tmp.Cross(tmp,m_n);
+	m_en1.Normalize(tmp);
+	tmp.Sub(m_t->m_v[1]->m_pos,m_t->m_v[2]->m_pos);
+	tmp.Cross(tmp,m_n);
+	m_en2.Normalize(tmp);
+	tmp.Sub(m_t->m_v[2]->m_pos,m_t->m_v[0]->m_pos);
+	tmp.Cross(tmp,m_n);
+	m_en3.Normalize(tmp);
 }
 
 // place a triangle mesh in the grid
 void TXGrid3D::PlaceIntoGrid(TXGeometry *geom) 
 {
-	_min = CVector3f(DBL_MAX, DBL_MAX, DBL_MAX);
-	_max = CVector3f(-DBL_MAX, -DBL_MAX, -DBL_MAX);
+	m_min = CVector3f(FLT_MAX, FLT_MAX, FLT_MAX);
+	m_max = CVector3f(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
 	// compute bounding box
 	int totalTriangles = 0;
@@ -33,15 +33,22 @@ void TXGrid3D::PlaceIntoGrid(TXGeometry *geom)
 	TXTriangle* tp;
 	CVector3f p;
 
-	for(ULONG t=0;t<geom->_triangles.size();t++)
+	for(ULONG t=0;t<geom->m_triangles.size();t++)
 	{
-		tp = geom->_triangles[t];
+		tp = geom->m_triangles[t];
 		totalTriangles++;
 		for(int i=0;i<3;i++)
 		{
-			p = tp->_v[i]->_pos;
-			_min.Set(MIN(_min.GetX(),p.GetX()),MIN(_min.GetY(),p.GetY()),MIN(_min.GetZ(),p.GetZ()));
-			_max.Set(MAX(_max.GetX(),p.GetX()),MAX(_max.GetY(),p.GetY()),MAX(_max.GetZ(),p.GetZ()));
+			p = tp->m_v[i]->m_pos;
+			m_min.Set(
+				MIN(m_min.GetX(),p.GetX()),
+				MIN(m_min.GetY(),p.GetY()),
+				MIN(m_min.GetZ(),p.GetZ())
+			);
+			m_max.Set(MAX(m_max.GetX(),p.GetX()),
+				MAX(m_max.GetY(),p.GetY()),
+				MAX(m_max.GetZ(),p.GetZ())
+			);
 		}
 	}
 
@@ -56,13 +63,13 @@ void TXGrid3D::PlaceIntoGrid(TXGeometry *geom)
 	// create grid
 	CreateGrid(grid_size);
 
-	_xstep = (_max.GetX() - _min.GetX()) / _size;
-	_ystep = (_max.GetY() - _min.GetY()) / _size;
-	_zstep = (_max.GetZ() - _min.GetZ()) / _size;
+	m_xstep = (m_max.GetX() - m_min.GetX()) / m_size;
+	m_ystep = (m_max.GetY() - m_min.GetY()) / m_size;
+	m_zstep = (m_max.GetZ() - m_min.GetZ()) / m_size;
 
-	for(ULONG t=0;t<geom->_triangles.size();t++)
+	for(ULONG t=0;t<geom->m_triangles.size();t++)
 	{
-		PlaceTriangle(geom->_triangles[t]);
+		PlaceTriangle(geom->m_triangles[t]);
 	}
 	 
 }
@@ -72,33 +79,33 @@ void TXGrid3D::CreateGrid(int s)
 {
 	int i, j, k;
 	// clear old space
-	if (_grid && (_size > 0)) 
+	if (m_grid && (m_size > 0)) 
 	{
-		for (i=0; i<_size; i++)
-			for (j=0; j<_size; j++)
-				for (k=0; k<_size; k++)
-					_grid[i][j][k].clear();
+		for (i=0; i<m_size; i++)
+			for (j=0; j<m_size; j++)
+				for (k=0; k<m_size; k++)
+					m_grid[i][j][k].clear();
 	}
 
 	// if size changed, free old and allocate new
-	if (s != _size) 
+	if (s != m_size) 
 	{
-		if (_grid) 
+		if (m_grid) 
 		{
-			for (i=0; i<_size; i++)
-				for (j=0; j<_size; j++)
-					delete[] _grid[i][j];
-				for (i=0; i<_size; i++)
-					delete[] _grid[i];
-				delete[] _grid;
+			for (i=0; i<m_size; i++)
+				for (j=0; j<m_size; j++)
+					delete[] m_grid[i][j];
+				for (i=0; i<m_size; i++)
+					delete[] m_grid[i];
+				delete[] m_grid;
 		}
-		_size = s;
-		_grid = new std::vector<TXGridTriangle*>**[s];
+		m_size = s;
+		m_grid = new std::vector<TXGridTriangle*>**[s];
 		for (i=0; i<s; i++)
-		  _grid[i] = new std::vector<TXGridTriangle*>*[s];
+		  m_grid[i] = new std::vector<TXGridTriangle*>*[s];
 		for (i=0; i<s; i++)
 		  for (j=0; j<s; j++)
-		_grid[i][j] = new std::vector<TXGridTriangle*>[s];
+		m_grid[i][j] = new std::vector<TXGridTriangle*>[s];
 	}
 }
 
@@ -106,24 +113,24 @@ void TXGrid3D::CreateGrid(int s)
 TXGrid3D::~TXGrid3D() 
 {
 	int i, j, k;
-	if (_grid && (_size > 0)) 
+	if (m_grid && (m_size > 0)) 
 	{
-		for (i=0; i<_size; i++) 
+		for (i=0; i<m_size; i++) 
 		{
-			for (j=0; j<_size; j++)
+			for (j=0; j<m_size; j++)
 			{
-				for (k=0; k<_size; k++) 
+				for (k=0; k<m_size; k++) 
 				{
-				  _grid[i][j][k].clear();
+				  m_grid[i][j][k].clear();
 				}
-				delete[] _grid[i][j];
+				delete[] m_grid[i][j];
 			}
-			delete[] _grid[i];
+			delete[] m_grid[i];
 		}
-		delete[] _grid;
+		delete[] m_grid;
 	}
-	_grid = 0;
-	_rays.clear();
+	m_grid = 0;
+	m_rays.clear();
 }
 
 // place a triangle into intesected cells
@@ -133,28 +140,36 @@ void TXGrid3D::PlaceTriangle(TXTriangle *t)
 	CVector3f tmin(DBL_MAX, DBL_MAX, DBL_MAX), tmax(-DBL_MAX, -DBL_MAX, -DBL_MAX);
 	for (int v=0; v<3; v++)
 	{
-		tmin.Set(MIN(tmin.GetX(),t->_v[v]->_pos.GetX()),
-					MIN(tmin.GetY(),t->_v[v]->_pos.GetY()),
-					MIN(tmin.GetZ(),t->_v[v]->_pos.GetZ()));
+		tmin.Set(
+			MIN(tmin.GetX(),t->m_v[v]->m_pos.GetX()),
+			MIN(tmin.GetY(),t->m_v[v]->m_pos.GetY()),
+			MIN(tmin.GetZ(),t->m_v[v]->m_pos.GetZ())
+		);
 
 		
-		tmax.Set(MAX(tmax.GetX(),t->_v[v]->_pos.GetX()),
-					MAX(tmax.GetY(),t->_v[v]->_pos.GetY()),
-					MAX(tmax.GetZ(),t->_v[v]->_pos.GetZ()));
+		tmax.Set(
+			MAX(tmax.GetX(),t->m_v[v]->m_pos.GetX()),
+			MAX(tmax.GetY(),t->m_v[v]->m_pos.GetY()),
+			MAX(tmax.GetZ(),t->m_v[v]->m_pos.GetZ())
+		);
 	}
 
 	// starting and ending cells of the bounding box
-	CVector3 start(MAX((int)floor((tmin.GetX() - _min.GetX())/_xstep), 0),
-		MAX((int)floor((tmin.GetY() - _min.GetY())/_ystep), 0),
-		MAX((int)floor((tmin.GetZ() - _min.GetZ())/_zstep), 0));
+	CVector3 start(
+		MAX((int)floor((tmin.GetX() - m_min.GetX())/m_xstep), 0),
+		MAX((int)floor((tmin.GetY() - m_min.GetY())/m_ystep), 0),
+		MAX((int)floor((tmin.GetZ() - m_min.GetZ())/m_zstep), 0)
+	);
 
-	CVector3 end(MIN((int)floor((tmax.GetX() - _min.GetX())/_xstep), _size-1),
-		MIN((int)floor((tmax.GetY() - _min.GetY())/_ystep), _size-1),
-		MIN((int)floor((tmax.GetZ() - _min.GetZ())/_zstep), _size-1));
+	CVector3 end(
+		MIN((int)floor((tmax.GetX() - m_min.GetX())/m_xstep), m_size-1),
+		MIN((int)floor((tmax.GetY() - m_min.GetY())/m_ystep), m_size-1),
+		MIN((int)floor((tmax.GetZ() - m_min.GetZ())/m_zstep), m_size-1)
+	);
 
 	TXGridTriangle* gt = new TXGridTriangle(t);
 
-	bool sa = (gt->_n.GetX() >= 0), sb = (gt->_n.GetY() >= 0), sc = (gt->_n.GetZ() >= 0);
+	bool sa = (gt->m_n.GetX() >= 0), sb = (gt->m_n.GetY() >= 0), sc = (gt->m_n.GetZ() >= 0);
 	CVector3f p1, p2;
 	bool sd1, sd2;
 
@@ -162,41 +177,41 @@ void TXGrid3D::PlaceTriangle(TXTriangle *t)
 	// still excessive, treat triangle as a plane to detect intersection
 	for (int i=(int)start.GetX(); i<=(int)end.GetX(); i++) 
 	{
-		p1.Set(_min.GetX() + i*_xstep,p1.GetY(),p2.GetZ());
-		p2.Set(p1.GetX() + _xstep,p2.GetY(),p2.GetZ());
+		p1.Set(m_min.GetX() + i*m_xstep,p1.GetY(),p2.GetZ());
+		p2.Set(p1.GetX() + m_xstep,p2.GetY(),p2.GetZ());
 
-		for (int j=start.GetY(); j<=end.GetY(); j++) 
+		for (int j=(int)start.GetY(); j<=(int)end.GetY(); j++) 
 		{
 			if (sb == sa) 
 			{
-				p1.Set(p1.GetX(),_min.GetY() + j*_ystep,p1.GetZ());
-				p2.Set(p2.GetX(),p1.GetY()+ _ystep,p2.GetZ()); 
+				p1.Set(p1.GetX(),m_min.GetY() + j*m_ystep,p1.GetZ());
+				p2.Set(p2.GetX(),p1.GetY()+ m_ystep,p2.GetZ()); 
 			}
 			else
 			{
-				p2.Set(p2.GetX(), _min.GetY() + j*_ystep,p2.GetZ());
-				p1.Set(p1.GetX(),p2.GetY() + _ystep,p1.GetZ());
+				p2.Set(p2.GetX(), m_min.GetY() + j*m_ystep,p2.GetZ());
+				p1.Set(p1.GetX(),p2.GetY() + m_ystep,p1.GetZ());
 			}
 			for (int k=start.GetZ(); k<=end.GetZ(); k++) 
 			{
 				if (sc == sa)
 				{
-					p1.Set(p1.GetX(),p1.GetY(),_min.GetZ() + k*_zstep);
-					p2.Set(p2.GetX(),p2.GetY(),p1.GetZ() + _zstep);
+					p1.Set(p1.GetX(),p1.GetY(),m_min.GetZ() + k*m_zstep);
+					p2.Set(p2.GetX(),p2.GetY(),p1.GetZ() + m_zstep);
 				}
 				else
 				{
-					p2.Set(p2.GetX(),p2.GetY(),_min.GetZ() + k*_zstep);
-					p1.Set(p1.GetX(),p1.GetY(),p2.GetZ() + _zstep);
+					p2.Set(p2.GetX(),p2.GetY(),m_min.GetZ() + k*m_zstep);
+					p1.Set(p1.GetX(),p1.GetY(),p2.GetZ() + m_zstep);
 				}
 			
 				CVector3f p1gt, p2gt;
-				p1gt.Sub(p1,gt->_t->_v[0]->_pos);
-				p2gt.Sub(p2,gt->_t->_v[0]->_pos);
-				sd1 = gt->_n.Dot(p1gt) >= 0;
-				sd2 = gt->_n.Dot(p2gt) >= 0;
+				p1gt.Sub(p1,gt->m_t->m_v[0]->m_pos);
+				p2gt.Sub(p2,gt->m_t->m_v[0]->m_pos);
+				sd1 = gt->m_n.Dot(p1gt) >= 0;
+				sd2 = gt->m_n.Dot(p2gt) >= 0;
 				if (sd1 != sd2) 
-					_grid[i][j][k].push_back(gt);
+					m_grid[i][j][k].push_back(gt);
 			}
 		}
 	}
@@ -206,7 +221,7 @@ void TXGrid3D::PlaceTriangle(TXTriangle *t)
 bool TXGrid3D::IntersectRay(const CVector3f& start, const CVector3f& end) 
 {
 	// pick rays
-	_rays.push_back(TXRay(start, end));
+	m_rays.push_back(TXRay(start, end));
 	CVector3f dir;
 	dir.Sub(start,end);
 
@@ -217,31 +232,31 @@ bool TXGrid3D::IntersectRay(const CVector3f& start, const CVector3f& end)
 
 	double dist = 0;
 	CVector3f pos;
-	pos.Sub(end, _min);
+	pos.Sub(end, m_min);
 
-	int ix = (int)floor((end.GetX() - _min.GetX())/_xstep),
-	iy = (int)floor((end.GetY() - _min.GetY())/_ystep),
-	iz = (int)floor((end.GetZ() - _min.GetZ())/_zstep);
+	int ix = (int)floor((end.GetX() - m_min.GetX())/m_xstep),
+	iy = (int)floor((end.GetY() - m_min.GetY())/m_ystep),
+	iz = (int)floor((end.GetZ() - m_min.GetZ())/m_zstep);
 	double tx = 1.0, ty = 1.0, tz = 1.0;
 
 	// first cell
-	ix = MIN(MAX(ix, 0), _size-1);
-	iy = MIN(MAX(iy, 0), _size-1);
-	iz = MIN(MAX(iz, 0), _size-1);
+	ix = MIN(MAX(ix, 0), m_size-1);
+	iy = MIN(MAX(iy, 0), m_size-1);
+	iz = MIN(MAX(iz, 0), m_size-1);
 
 	// intersection test, from end to start
-	while ((dist < 1) && (ix >= 0) && (ix < _size) &&(iy >= 0) && (iy < _size) && (iz >= 0) && (iz < _size)) 
+	while ((dist < 1) && (ix >= 0) && (ix < m_size) &&(iy >= 0) && (iy < m_size) && (iz >= 0) && (iz < m_size)) 
 	{
-		int csz = _grid[ix][iy][iz].size();
+		int csz = m_grid[ix][iy][iz].size();
 		for (int i=0; i<csz; i++) 
 		{
-			TXGridTriangle* gt = _grid[ix][iy][iz][i];
-			double rpdot = dir.Dot(gt->_n);
+			TXGridTriangle* gt = m_grid[ix][iy][iz][i];
+			double rpdot = dir.Dot(gt->m_n);
 			if (rpdot != 0) 
 			{
 				CVector3f tmp;
-				tmp.Sub(gt->_t->_v[0]->_pos,end);
-				double t = tmp.Dot(gt->_n) / rpdot;
+				tmp.Sub(gt->m_t->m_v[0]->m_pos,end);
+				double t = tmp.Dot(gt->m_n) / rpdot;
 
 				if (t > DBL_EPSILON && t < 1) 
 				{
@@ -249,16 +264,16 @@ bool TXGrid3D::IntersectRay(const CVector3f& start, const CVector3f& end)
 					pt.ScaleAdd(t,dir,end);
 
 					CVector3f pt0,pt1,pt2;
-					pt0.Sub(pt,gt->_t->_v[0]->_pos);
-					pt1.Sub(pt,gt->_t->_v[1]->_pos);
-					pt2.Sub(pt,gt->_t->_v[2]->_pos);
+					pt0.Sub(pt,gt->m_t->m_v[0]->m_pos);
+					pt1.Sub(pt,gt->m_t->m_v[1]->m_pos);
+					pt2.Sub(pt,gt->m_t->m_v[2]->m_pos);
 
 
-					if (pt0.Dot(gt->_en1)> -DBL_EPSILON &&
-					  pt1.Dot(gt->_en2)>-DBL_EPSILON &&
-					  pt2.Dot(gt->_en3)>-DBL_EPSILON) 
+					if (pt0.Dot(gt->m_en1)> -DBL_EPSILON &&
+					  pt1.Dot(gt->m_en2)>-DBL_EPSILON &&
+					  pt2.Dot(gt->m_en3)>-DBL_EPSILON) 
 					{
-						_rays[_rays.size()-1]._p = t;
+						m_rays[m_rays.size()-1].m_p = t;
 						return true;
 					}
 				}
@@ -267,11 +282,11 @@ bool TXGrid3D::IntersectRay(const CVector3f& start, const CVector3f& end)
 
 		// next cell
 		if (idir[0] != 0)
-		  tx = (_min.GetX() + (ix+(idir[0]+1)/2)*_xstep - end.GetX()) / dir.GetX();
+		  tx = (m_min.GetX() + (ix+(idir[0]+1)/2)*m_xstep - end.GetX()) / dir.GetX();
 		if (idir[1] != 0)
-		  ty = (_min.GetY() + (iy+(idir[1]+1)/2)*_ystep - end.GetY()) / dir.GetY();
+		  ty = (m_min.GetY() + (iy+(idir[1]+1)/2)*m_ystep - end.GetY()) / dir.GetY();
 		if (idir[2] != 0)
-		  tz = (_min.GetZ() + (iz+(idir[2]+1)/2)*_zstep - end.GetZ()) / dir.GetZ();
+		  tz = (m_min.GetZ() + (iz+(idir[2]+1)/2)*m_zstep - end.GetZ()) / dir.GetZ();
 		if ((tx <= ty) && (tx <= tz)) 
 		{
 			dist = tx, ix += idir[0];

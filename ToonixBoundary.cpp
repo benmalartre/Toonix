@@ -2,6 +2,7 @@
 //------------------------------------------------
 #include "ToonixRegister.h"
 #include "ToonixData.h"
+#include "ToonixCommon.h"
 
 // Defines port, group and map identifiers used for registering the ICENode
 enum IDs
@@ -18,16 +19,6 @@ enum IDs
 	ID_CTXT_CNS,
 	ID_UNDEF = ULONG_MAX
 };
-
-void CleanUpUserData(Context& in_ctxt)
-{
-	if(!in_ctxt.GetUserData().IsEmpty())
-	{
-		TXLine* line = (TXLine*)(CValue::siPtrType)in_ctxt.GetUserData( );
-		delete line;
-		in_ctxt.PutUserData((CValue::siPtrType)NULL);
-	}
-}
 
 bool GetBoundaryDirtyState(ICENodeContext& in_ctxt )
 {
@@ -111,9 +102,9 @@ SICALLBACK ToonixBoundary_Evaluate( ICENodeContext& in_ctxt )
 	//Empty Out if input is invalid
 	if(!data){line->EmptyData();return CStatus::OK;}
 
-	line->_geom = data->_geom;
+	line->m_geom = data->m_geom;
 
-	if(GetBoundaryDirtyState(in_ctxt)||line->_geom->_culledges)
+	if(GetBoundaryDirtyState(in_ctxt)||line->m_geom->m_culledges)
 	{
 		// Get the parameters value
 		CDataArrayFloat widthData(in_ctxt, ID_IN_Width);
@@ -122,10 +113,10 @@ SICALLBACK ToonixBoundary_Evaluate( ICENodeContext& in_ctxt )
 		CDataArrayFloat extendData(in_ctxt, ID_IN_Extend);
 
 		// pass it to TXLine object
-		line->_width = widthData[0];
-		line->_break = (float)DegreesToRadians(breakData[0]);
-		line->_filterpoints = filterData[0];
-		line->_extend = extendData[0];
+		line->m_width = widthData[0];
+		line->m_break = (float)DegreesToRadians(breakData[0]);
+		line->m_filterpoints = filterData[0];
+		line->m_extend = extendData[0];
 
 		// build line
 		line->GetBoundaries();
@@ -143,16 +134,12 @@ SICALLBACK ToonixBoundary_Evaluate( ICENodeContext& in_ctxt )
 
 SICALLBACK ToonixBoundary_Init( CRef& in_ctxt )
 {
-	Context ctxt(in_ctxt);
-	// Build a new Line Object
-	TXLine* line = new TXLine();
-	ctxt.PutUserData((CValue::siPtrType)line);
+	InitTXLineData(in_ctxt);
 	return CStatus::OK;
 }
 
 SICALLBACK ToonixBoundary_Term( CRef& in_ctxt )
 {
-	Context ctxt(in_ctxt);
-	CleanUpUserData(ctxt);
+	CleanTXLineData(in_ctxt);
 	return CStatus::OK;
 }

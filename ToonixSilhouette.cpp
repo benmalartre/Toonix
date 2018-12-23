@@ -2,6 +2,7 @@
 //------------------------------------------------
 #include "ToonixRegister.h"
 #include "ToonixData.h"
+#include "ToonixCommon.h"
 
 // Defines port, group and map identifiers used for registering the ICENode
 enum IDs
@@ -14,6 +15,7 @@ enum IDs
 	ID_IN_Extend = 5,
 	ID_IN_FilterPoints = 6,
 	ID_IN_SmoothSilhouette = 7,
+	ID_IN_OGLDraw = 8,
 	ID_G_100 = 100,
 	ID_OUT_ToonixLine = 201,
 	ID_TYPE_CNS = 400,
@@ -71,6 +73,9 @@ CStatus RegisterToonixSilhouette( PluginRegistrar& in_reg )
 	st = nodeDef.AddInputPort(ID_IN_SmoothSilhouette,ID_G_100,siICENodeDataBool,siICENodeStructureSingle,siICENodeContextSingleton,L"SmoothSilhouette",L"SmoothSilhouette",true);
 	st.AssertSucceeded( ) ;
 
+	st = nodeDef.AddInputPort(ID_IN_OGLDraw,ID_G_100,siICENodeDataBool,siICENodeStructureSingle,siICENodeContextSingleton,L"OGLDraw",L"OGLDraw",true);
+	st.AssertSucceeded( ) ;
+
 	// Add output ports.
 	CStringArray ToonixLineCustomType(1);
 	ToonixLineCustomType[0] = L"ToonixLine";
@@ -101,7 +106,7 @@ SICALLBACK ToonixSilhouette_Evaluate( ICENodeContext& in_ctxt )
 SICALLBACK ToonixSilhouette_BeginEvaluate( ICENodeContext& in_ctxt )
 {
 	CValue userData = in_ctxt.GetUserData();
-	TXLine* line = (TXLine*)(CValue::siPtrType)in_ctxt.GetUserData( );;
+	TXLine* line = (TXLine*)(CValue::siPtrType)in_ctxt.GetUserData( );
 
 	// Get the input TXData
 	CDataArrayCustomType ToonixData( in_ctxt, ID_IN_ToonixData );
@@ -115,10 +120,10 @@ SICALLBACK ToonixSilhouette_BeginEvaluate( ICENodeContext& in_ctxt )
 	if(!data){line->EmptyData();return CStatus::OK;}
 	
 	// Get underlying TXGeometry
-	line->_geom = data->_geom;
+	line->m_geom = data->m_geom;
 	
 	// Get View Position and optionnal lights positions used for silhouette detection
-	line->_eye.clear();
+	line->m_eye.clear();
 	
 	siICENodeDataType inPortType;
 	siICENodeStructureType inPortStruct;
@@ -128,30 +133,30 @@ SICALLBACK ToonixSilhouette_BeginEvaluate( ICENodeContext& in_ctxt )
 	if ( inPortStruct == XSI::siICENodeStructureSingle )
 	{
 		CDataArrayVector3f viewPointData( in_ctxt, ID_IN_ViewPosition );
-		line->_eye.push_back(viewPointData[0]);
-		line->_nbv = 1;
+		line->m_eye.push_back(viewPointData[0]);
+		line->m_nbv = 1;
 	}
 	else if ( inPortStruct == XSI::siICENodeStructureArray )
 	{
 		CDataArray2DVector3f viewPointsData( in_ctxt, ID_IN_ViewPosition );
 		CDataArray2DVector3f::Accessor viewPointData = viewPointsData[0];
-		line->_nbv = viewPointData.GetCount();
+		line->m_nbv = viewPointData.GetCount();
 
-		for(ULONG v=0;v<line->_nbv;v++)
+		for(ULONG v=0;v<line->m_nbv;v++)
 		{
-			line->_eye.push_back(viewPointData[v]);
+			line->m_eye.push_back(viewPointData[v]);
 		}
 	}
 
 	// Get View Bias used for silhouette detection
-	line->_bias.Resize(line->_nbv);
+	line->m_bias.Resize(line->m_nbv);
 	in_ctxt.GetPortInfo( ID_IN_ViewBias, inPortType, inPortStruct, inPortContext );
 	if ( inPortStruct == XSI::siICENodeStructureSingle )
 	{
 		CDataArrayFloat viewBias( in_ctxt, ID_IN_ViewBias );
-		for(ULONG v=0;v<line->_nbv;v++)
+		for(ULONG v=0;v<line->m_nbv;v++)
 		{
-			line->_bias[v] = viewBias[0];
+			line->m_bias[v] = viewBias[0];
 		}
 		
 	}
@@ -159,9 +164,9 @@ SICALLBACK ToonixSilhouette_BeginEvaluate( ICENodeContext& in_ctxt )
 	{
 		CDataArray2DFloat viewBiasData( in_ctxt, ID_IN_ViewBias );
 		CDataArray2DFloat::Accessor viewBias = viewBiasData[0];
-		for(ULONG v=0;v<line->_nbv;v++)
+		for(ULONG v=0;v<line->m_nbv;v++)
 		{
-			line->_bias[v] = viewBias[v];
+			line->m_bias[v] = viewBias[v];
 		}
 	}
 	// Get the parameters value
@@ -170,42 +175,51 @@ SICALLBACK ToonixSilhouette_BeginEvaluate( ICENodeContext& in_ctxt )
 	CDataArrayFloat filterData(in_ctxt, ID_IN_FilterPoints);
 	CDataArrayFloat extendData(in_ctxt, ID_IN_Extend);
 	CDataArrayBool smoothData(in_ctxt,ID_IN_SmoothSilhouette);
+	CDataArrayBool ogldrawData(in_ctxt,ID_IN_OGLDraw);
 
 	// Pass them to line object
-	line->_width = widthData[0];
-	line->_break = (float)DegreesToRadians(breakData[0]);
-	line->_filterpoints = filterData[0];
-	line->_extend = extendData[0];
-	line->_smoothsilhouette = smoothData[0];
+	line->m_width = widthData[0];
+	line->m_break = (float)DegreesToRadians(breakData[0]);
+	line->m_filterpoints = filterData[0];
+	line->m_extend = extendData[0];
+	line->m_smoothsilhouette = smoothData[0];
+	line->m_ogldraw = ogldrawData[0];
 
 	line->ClearChains();
+	/*
+	bool dual = data->_useoctree;
+	if(dual)
+	{
+		line->SetDualMesh(data->_dualmesh);
+		for(int v=0;v<line->_eye.size();v++)
+		{
+			line->GetDualSilhouettes((LONG)v);
+			line->Build(v);
+		}
+	}
 
-	for(int v=0;v<line->_eye.size();v++)
+	else
+	{
+	*/
+	for(int v=0;v<line->m_eye.size();v++)
 	{
 		line->GetSilhouettes(v);
 		line->Build(v);
+		//Application().LogMessage(L"Nb Chains : "+(CString)(ULONG)line->_chains.size());
 	}
+	//}
 
 	return CStatus::OK;
 }
 
 SICALLBACK ToonixSilhouette_Init( CRef& in_ctxt )
 {
-	Context ctxt(in_ctxt);
-	// Build a new Line Object
-	TXLine* line = new TXLine();
-	ctxt.PutUserData((CValue::siPtrType)line);
+	InitTXLineData(in_ctxt);
 	return CStatus::OK;
 }
 
 SICALLBACK ToonixSilhouette_Term( CRef& in_ctxt )
 {
-	Context ctxt(in_ctxt);
-	if(!ctxt.GetUserData().IsEmpty())
-	{
-		TXLine* line = (TXLine*)(CValue::siPtrType)ctxt.GetUserData( );
-		delete line;
-		ctxt.PutUserData((CValue::siPtrType)NULL);
-	}
+	CleanTXLineData(in_ctxt);
 	return CStatus::OK;
 }

@@ -28,11 +28,11 @@ void TXPlane::SetFromThreePoints(CVector3f& a, CVector3f& b, CVector3f& c)
 	CVector3f ab, cb, n;
 	ab.Sub(a,b);
 	cb.Sub(c,b);
-	_norm.Cross(cb,ab);
-	_norm.NormalizeInPlace();
+	m_norm.Cross(cb,ab);
+	m_norm.NormalizeInPlace();
 
-	_pos = b;
-	_d = -(_norm.Dot(_pos));
+	m_pos = b;
+	m_d = -(m_norm.Dot(m_pos));
 }
 
 void TXPlane::SetFromCamera(TXCamera* cam,bool negate)
@@ -40,63 +40,63 @@ void TXPlane::SetFromCamera(TXCamera* cam,bool negate)
 	if(!negate)
 	{
 		CVector3f v(0,0,-1);
-		_norm = cam->RotateVector(v);
-		_pos.ScaleAdd(cam->_near,_norm,cam->_pos);
+		m_norm = cam->RotateVector(v);
+		m_pos.ScaleAdd(cam->m_near,m_norm,cam->m_pos);
 	}
 
 	else
 	{
 		CVector3f v(0,0,1);
-		_norm = cam->RotateVector(v);
-		_pos.ScaleAdd(-cam->_far,_norm,cam->_pos);
+		m_norm = cam->RotateVector(v);
+		m_pos.ScaleAdd(-cam->m_far,m_norm,cam->m_pos);
 	}
-	_d =  -(_norm.Dot(_pos));
+	m_d =  -(m_norm.Dot(m_pos));
 }
 
 void TXPlane::SetNormalAndPoint(CVector3f& norm, CVector3f &pnt)
 {
-	_norm.Set(norm.GetX(),norm.GetY(),norm.GetZ());
-	_norm.NormalizeInPlace();
-	_d = -(_norm.Dot(pnt));
+	m_norm.Set(norm.GetX(),norm.GetY(),norm.GetZ());
+	m_norm.NormalizeInPlace();
+	m_d = -(m_norm.Dot(pnt));
 }
 
 float TXPlane::DistanceToPoint(CVector3f& v)
 {
-	return (_d + _norm.Dot(v));
+	return (m_d + m_norm.Dot(v));
 }
 
 void TXPlane::SetCoefficients(float a, float b, float c, float d)
 {
 	// set the normal vector
-	_norm.Set(a,b,c);
+	m_norm.Set(a,b,c);
 
 	//compute the length of the vector
-	float l = _norm.GetLength();
+	float l = m_norm.GetLength();
 
 	// normalize the vector
-	_norm.Set(a/l,b/l,c/l);
+	m_norm.Set(a/l,b/l,c/l);
 
 	// and divide d by th length as well
-	_d = _d/l;
+	m_d = m_d/l;
 }
 
 
-void TXCamera::Set(const CMatrix4f& matrix, const float& fov, const float& aspect, const float& near ,const float& far)
+void TXCamera::Set(const CMatrix4f& matrix, const float& fov, const float& aspect, const float& nearplane ,const float& farplane)
 {
-	_mat = matrix;
-	_fov = fov;
-	_aspect = aspect;
-	_near = MAX(near,0.001f);
-	_far = far;
+	m_mat = matrix;
+	m_fov = fov;
+	m_aspect = aspect;
+	m_near = MAX(nearplane,0.001f);
+	m_far = farplane;
 
 	// compute width and height of the near and far plane sections
-	_tan = (float)tan(DegreesToRadians(_fov)* 0.5);
-	_nw = _near * _tan;
-	_nh = _nw / _aspect;
-	_fw = _far  * _tan;
-	_fh = _fw / _aspect;
+	m_tan = (float)tan(DegreesToRadians(m_fov)* 0.5);
+	m_nw = m_near * m_tan;
+	m_nh = m_nw / m_aspect;
+	m_fw = m_far  * m_tan;
+	m_fh = m_fw / m_aspect;
 
-	_limits.resize(4);
+	m_limits.resize(4);
 	GetTransformation();
 	//GetProjectionMatrix();
 	GetLimits();
@@ -105,47 +105,47 @@ void TXCamera::Set(const CMatrix4f& matrix, const float& fov, const float& aspec
 
 void TXCamera::GetPlanes()
 {
-	_planes.resize(6);
+	m_planes.resize(6);
 	CVector3f tmp;
 
 	// compute the centers of the near and far planes
-	tmp.Scale(-_near, _forward);
-	_nc.Sub(_pos,tmp);
-	tmp.Scale(-_far, _forward);
-	_fc.Sub(_pos,tmp);
+	tmp.Scale(-m_near, m_forward);
+	m_nc.Sub(m_pos,tmp);
+	tmp.Scale(-m_far, m_forward);
+	m_fc.Sub(m_pos,tmp);
 
 	// compute the 4 corners of the frustum on the near plane
-	tmp.Scale(_nh,_up);
-	_ntl.Add(_nc,tmp);
-	_ntr.Add(_nc,tmp);
-	_nbl.Sub(_nc,tmp);
-	_nbr.Sub(_nc,tmp);
+	tmp.Scale(m_nh,m_up);
+	m_ntl.Add(m_nc,tmp);
+	m_ntr.Add(m_nc,tmp);
+	m_nbl.Sub(m_nc,tmp);
+	m_nbr.Sub(m_nc,tmp);
 
-	tmp.Scale(_nw,_side);
-	_ntl.SubInPlace(tmp);
-	_ntr.AddInPlace(tmp);
-	_nbl.SubInPlace(tmp);
-	_nbr.AddInPlace(tmp);
+	tmp.Scale(m_nw,m_side);
+	m_ntl.SubInPlace(tmp);
+	m_ntr.AddInPlace(tmp);
+	m_nbl.SubInPlace(tmp);
+	m_nbr.AddInPlace(tmp);
 
 	// compute the 4 corners of the frustum on the far plane
-	tmp.Scale(_fh,_up);
-	_ftl.Add(_fc,tmp);
-	_ftr.Add(_fc,tmp);
-	_fbl.Sub(_fc,tmp);
-	_fbr.Sub(_fc,tmp);
+	tmp.Scale(m_fh,m_up);
+	m_ftl.Add(m_fc,tmp);
+	m_ftr.Add(m_fc,tmp);
+	m_fbl.Sub(m_fc,tmp);
+	m_fbr.Sub(m_fc,tmp);
 
-	tmp.Scale(_fw,_side);
-	_ftl.SubInPlace(tmp);
-	_ftr.AddInPlace(tmp);
-	_fbl.SubInPlace(tmp);
-	_fbr.AddInPlace(tmp);
+	tmp.Scale(m_fw,m_side);
+	m_ftl.SubInPlace(tmp);
+	m_ftr.AddInPlace(tmp);
+	m_fbl.SubInPlace(tmp);
+	m_fbr.AddInPlace(tmp);
 
-	_planes[TOP].SetFromThreePoints(_ntr,_ntl,_ftl);
-	_planes[BOTTOM].SetFromThreePoints(_nbl,_nbr,_fbr);
-	_planes[LEFT].SetFromThreePoints(_ntl,_nbl,_fbl);
-	_planes[RIGHT].SetFromThreePoints(_nbr,_ntr,_fbr);
-	_planes[NEARP].SetFromCamera(this,false);
-	_planes[FARP].SetFromCamera(this,true);
+	m_planes[TOP].SetFromThreePoints(m_ntr,m_ntl,m_ftl);
+	m_planes[BOTTOM].SetFromThreePoints(m_nbl,m_nbr,m_fbr);
+	m_planes[LEFT].SetFromThreePoints(m_ntl,m_nbl,m_fbl);
+	m_planes[RIGHT].SetFromThreePoints(m_nbr,m_ntr,m_fbr);
+	m_planes[NEARP].SetFromCamera(this,false);
+	m_planes[FARP].SetFromCamera(this,true);
 
 	/*
 	CMatrix4f mult;
@@ -252,10 +252,10 @@ void TXCamera::GetProjectionMatrix()
 int TXCamera::GeometryInFrustrum(TXGeometry* geom)
 {
 	CVector3f d;
-	d.Sub(geom->_spherecenter,_pos);
-	if(d.Dot(_forward)<0 && d.GetLength()>geom->_sphereradius)
+	d.Sub(geom->m_spherecenter, m_pos);
+	if(d.Dot(m_forward)<0 && d.GetLength()>geom->m_sphereradius)
 		return(OUTSIDE);
-	int infrustrum = SphereInFrustrum(geom->_spherecenter, geom->_sphereradius);
+	int infrustrum = SphereInFrustrum(geom->m_spherecenter, geom->m_sphereradius);
 	return infrustrum;
 }
 
@@ -266,7 +266,7 @@ int TXCamera::SphereInFrustrum(CVector3f& center, float radius)
 	for(int i = 0; i < 6; ++i) 
 	{
 		// find the distance to this plane
-		dist = _planes[i].DistanceToPoint(center);
+		dist = m_planes[i].DistanceToPoint(center);
 
 		// if this distance is < -sphere.radius, we are outside
 		if(dist < -radius)
@@ -286,7 +286,7 @@ int TXCamera::PointInFrustrum(CVector3f &p)
 	int result = INSIDE;
 
 	for(int i=0; i < 6; i++) {
-		if (_planes[i].DistanceToPoint(p) < 0)
+		if (m_planes[i].DistanceToPoint(p) < 0)
 			return OUTSIDE;
 	}
 	return(result);
@@ -294,8 +294,8 @@ int TXCamera::PointInFrustrum(CVector3f &p)
 
 void TXCamera::GetTransformation()
 {
-	_scl.Set(1.0,1.0,1.0);
-	float* m = _mat.Get();
+	m_scl.Set(1.0,1.0,1.0);
+	float* m = m_mat.Get();
 
 	float qx,qy,qz,qw,qw4;
 
@@ -305,15 +305,15 @@ void TXCamera::GetTransformation()
 	qy = (m[8] - m[2]) / qw4;
 	qz = (m[1] - m[4]) / qw4;
 
-	_quat.Set(qw,qx,qy,qz);
-	_pos.Set(m[12],m[13],m[14]);
+	m_quat.Set(qw,qx,qy,qz);
+	m_pos.Set(m[12],m[13],m[14]);
 
-	_forward.Set(0,0,-1);
-	_forward = RotateVector(_forward);
-	_side.Set(1,0,0);
-	_side = RotateVector(_side);
-	_up.Set(0,1,0);
-	_up = RotateVector(_up);
+	m_forward.Set(0,0,-1);
+	m_forward = RotateVector(m_forward);
+	m_side.Set(1,0,0);
+	m_side = RotateVector(m_side);
+	m_up.Set(0,1,0);
+	m_up = RotateVector(m_up);
 }
 
 CVector3f TXCamera::RotateVector(CVector3f& v)
@@ -323,7 +323,7 @@ CVector3f TXCamera::RotateVector(CVector3f& v)
 	CQuaternionf q2;
 
 	vn.Normalize(v);
-	q2.Conjugate(_quat);
+	q2.Conjugate(m_quat);
 
 	CQuaternionf vecQuat, resQuat;
 
@@ -332,7 +332,7 @@ CVector3f TXCamera::RotateVector(CVector3f& v)
 	vecQuat.PutZ(vn.GetZ());
 
 	resQuat.Mul(vecQuat,q2);
-	resQuat.Mul(_quat,resQuat);
+	resQuat.Mul(m_quat,resQuat);
 
 	CVector3f out(resQuat.GetX(),resQuat.GetY(),resQuat.GetZ());
 	out.SetLength(len);
@@ -462,7 +462,7 @@ CVector3f TXCamera::GetLimit(CVector3f& axis,CVector3f& perp, float angle)
 {	
 	CRotationf r1, r2;
 	r1.Set(axis,angle);
-	r2.Set(_quat);
+	r2.Set(m_quat);
 	r1.Mul(r2);
 	CQuaternionf q = r1.GetQuaternion();
 	CVector3f limit = RotateVector(perp,q);
@@ -471,26 +471,26 @@ CVector3f TXCamera::GetLimit(CVector3f& axis,CVector3f& perp, float angle)
 
 void TXCamera::GetLimits()
 {
-	_forward.Set(0,0,-1);
-	_forward = RotateVector(_forward,_quat);
+	m_forward.Set(0,0,-1);
+	m_forward = RotateVector(m_forward,m_quat);
 	
 	CVector3f dir, axis, perp;
 	axis.Set(0,1,0);
 	perp.Set(1,0,0);
-	float angle = (float)DegreesToRadians(_fov *0.5f);
+	float angle = (float)DegreesToRadians(m_fov *0.5f);
 
-	_limits[0] = GetLimit(axis, perp, angle);
+	m_limits[0] = GetLimit(axis, perp, angle);
 
 	axis.Set(0,-1,0);
 	perp.Set(-1,0,0);
-	_limits[1] = GetLimit(axis, perp, angle);
+	m_limits[1] = GetLimit(axis, perp, angle);
 
-	angle = (float)DegreesToRadians(_fov*0.5f*(1.0f/_aspect));
+	angle = (float)DegreesToRadians(m_fov*0.5f*(1.0f/m_aspect));
 	axis.Set(-1,0,0);
 	perp.Set(0,1,0);
-	_limits[2] = GetLimit(axis, perp, angle);
+	m_limits[2] = GetLimit(axis, perp, angle);
 
 	axis.Set(1,0,0);
 	perp.Set(0,-1,0);
-	_limits[3] = GetLimit(axis, perp, angle);
+	m_limits[3] = GetLimit(axis, perp, angle);
 }

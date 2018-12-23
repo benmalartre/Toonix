@@ -85,7 +85,6 @@ int GetToonixDataDirtyState(ICENodeContext& in_ctxt, bool culling)
 {
 	CICEPortState GeomState( in_ctxt, ID_IN_Geometry );
 	bool geomDirty = GeomState.IsDirty( CICEPortState::siAnyDirtyState );
-	GeomState.ClearState();
 
 	CICEPortState CullingState( in_ctxt, ID_IN_CameraCulling );
 	bool cullingDirty = CullingState.IsDirty( CICEPortState::siAnyDirtyState );
@@ -168,6 +167,7 @@ XSIPLUGINCALLBACK CStatus ToonixGetData_BeginEvaluate( ICENodeContext& in_ctxt )
 	if(dirtyState == 1)
 	{
 		bool bTopologyDirtyState = geom.IsDirty( CICEGeometry::siTopologyDirtyState );
+		//Application().LogMessage(L"Topology Dirty STate : "+(CString)bTopologyDirtyState);
 		geom.ClearState();
 
 		data->Init(geom, bTopologyDirtyState);

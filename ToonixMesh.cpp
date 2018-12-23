@@ -4,35 +4,35 @@
 
 TXMesh::TXMesh(TXLine *line)
 {
-	_nbv = 0;
-	_nbp = 0;
-	_factor = 1;
-	_line=line;
+	m_nbv = 0;
+	m_nbp = 0;
+	m_factor = 1;
+	m_line=line;
 }
 
 void TXMesh::Build()
 {
-	_subdiv = MAX(2,_subdiv);
-	_line->_width = MAX(0.001f,_line->_width);
-	_nbv = _nbp =0;
+	m_subdiv = MAX(2,m_subdiv);
+	m_line->m_width = MAX(0.001f,m_line->m_width);
+	m_nbv = m_nbp =0;
 
-	_section.Resize(_subdiv);
-	_section[0].Set(1.0,0,0);
-	CRotation pointsToInstanceRot(0,-.5 * DegreesToRadians(360.0 / float(_subdiv)),0);
-	_section[0].MulByMatrix3InPlace(pointsToInstanceRot.GetMatrix());
-	pointsToInstanceRot.SetFromXYZAngles(0,DegreesToRadians(360.0 / float(_subdiv)),0);
-	for(ULONG i=1;i<_subdiv;i++)_section[i].MulByMatrix3(_section[i-1],pointsToInstanceRot.GetMatrix());
+	m_section.Resize(m_subdiv);
+	m_section[0].Set(1.0,0,0);
+	CRotation pointsToInstanceRot(0,-.5 * DegreesToRadians(360.0 / float(m_subdiv)),0);
+	m_section[0].MulByMatrix3InPlace(pointsToInstanceRot.GetMatrix());
+	pointsToInstanceRot.SetFromXYZAngles(0,DegreesToRadians(360.0 / float(m_subdiv)),0);
+	for(ULONG i=1;i<m_subdiv;i++)m_section[i].MulByMatrix3(m_section[i-1],pointsToInstanceRot.GetMatrix());
 
-	_vertices.clear();
-	_polygons.Clear();
+	m_vertices.clear();
+	m_polygons.Clear();
 
-	for(ULONG c=0;c<_line->_chains.size();c++)
+	for(ULONG c=0;c<m_line->m_chains.size();c++)
 	{
-		_points = &_line->_chains[c]->_points;
+		m_points = &m_line->m_chains[c]->m_points;
 		bool hasnext = false;
 		bool firstcap = true;
 		bool closed = false;
-		ULONG pSize = (ULONG)_points->size();
+		ULONG pSize = (ULONG)m_points->size();
 
 		for(ULONG p =0;p<pSize;p++)
 		{
@@ -44,7 +44,7 @@ void TXMesh::Build()
 			else 
 			{
 				hasnext = false;
-				if(pSize>2)closed = _line->_chains[c]->_closed;
+				if(pSize>2)closed = m_line->m_chains[c]->m_closed;
 				else closed = false;
 			}
 
@@ -57,18 +57,18 @@ void TXMesh::Build()
 
 void TXMesh::AddPoint(LONG id, bool firstcap, bool hasnext, bool closed, ULONG chainsize)
 {
-	_xf.SetSclX((*_points)[id]->_radius);
-	_xf.SetSclY((*_points)[id]->_length);
-	_xf.SetSclZ((*_points)[id]->_radius);
+	m_xf.SetSclX((*m_points)[id]->m_radius);
+	m_xf.SetSclY((*m_points)[id]->m_length);
+	m_xf.SetSclZ((*m_points)[id]->m_radius);
 
 	CVector3f tangent,up,norm;
 	if(hasnext)
 	{
-		tangent.LinearlyInterpolate((*_points)[id]->_dir,(*_points)[id+1]->_dir,0.5);
-		norm.LinearlyInterpolate((*_points)[id]->_norm,(*_points)[id+1]->_norm,0.5);
+		tangent.LinearlyInterpolate((*m_points)[id]->m_dir,(*m_points)[id+1]->m_dir,0.5);
+		norm.LinearlyInterpolate((*m_points)[id]->m_norm,(*m_points)[id+1]->m_norm,0.5);
 		
-		up.LinearlyInterpolate((*_points)[id]->_pos,(*_points)[id+1]->_pos,0.5);
-		up.SubInPlace(_view);
+		up.LinearlyInterpolate((*m_points)[id]->m_pos,(*m_points)[id+1]->m_pos,0.5);
+		up.SubInPlace(m_view);
 		
 		
 		up.Cross(tangent,up);
@@ -81,11 +81,11 @@ void TXMesh::AddPoint(LONG id, bool firstcap, bool hasnext, bool closed, ULONG c
 	}
 	else
 	{
-		tangent = (*_points)[id]->_dir;
-		norm = (*_points)[id]->_norm;
+		tangent = (*m_points)[id]->m_dir;
+		norm = (*m_points)[id]->m_norm;
 		
-		up = (*_points)[id]->_pos;
-		up.SubInPlace(_view);
+		up = (*m_points)[id]->m_pos;
+		up.SubInPlace(m_view);
 		
 		up.Cross(tangent,up);
 		/*
@@ -96,96 +96,96 @@ void TXMesh::AddPoint(LONG id, bool firstcap, bool hasnext, bool closed, ULONG c
 	}
 
 	DirectionToRotation(tangent,up);
-	_xf.SetRotationFromMatrix3(_matrix);
+	m_xf.SetRotationFromMatrix3(m_matrix);
 
-	_offset.Normalize((*_points)[id]->_dir);
-	_offset.ScaleInPlace((*_points)[id]->_length * 0.5f);
-	_noffset.Negate(_offset);
+	m_offset.Normalize((*m_points)[id]->m_dir);
+	m_offset.ScaleInPlace((*m_points)[id]->m_length * 0.5f);
+	m_noffset.Negate(m_offset);
 	
 	if(firstcap)
 	{
-		_xf.SetPosX((*_points)[id]->_pos.GetX()+_noffset.GetX());
-		_xf.SetPosY((*_points)[id]->_pos.GetY()+_noffset.GetY());
-		_xf.SetPosZ((*_points)[id]->_pos.GetZ()+_noffset.GetZ());
+		m_xf.SetPosX((*m_points)[id]->m_pos.GetX()+m_noffset.GetX());
+		m_xf.SetPosY((*m_points)[id]->m_pos.GetY()+m_noffset.GetY());
+		m_xf.SetPosZ((*m_points)[id]->m_pos.GetZ()+m_noffset.GetZ());
 
-		for(ULONG j=0;j<_subdiv;j++)
+		for(ULONG j=0;j<m_subdiv;j++)
 		{
-			_p.MulByTransformation(_section[j],_xf);
-			_vertices.push_back(CVector3f((float)_p.GetX(),(float)_p.GetY(),(float)_p.GetZ()));
-			_nbv++;
+			m_p.MulByTransformation(m_section[j],m_xf);
+			m_vertices.push_back(CVector3f((float)m_p.GetX(),(float)m_p.GetY(),(float)m_p.GetZ()));
+			m_nbv++;
 		}
 	}
 
-	_xf.SetPosX((*_points)[id]->_pos.GetX()+_offset.GetX());
-	_xf.SetPosY((*_points)[id]->_pos.GetY()+_offset.GetY());
-	_xf.SetPosZ((*_points)[id]->_pos.GetZ()+_offset.GetZ());
+	m_xf.SetPosX((*m_points)[id]->m_pos.GetX()+m_offset.GetX());
+	m_xf.SetPosY((*m_points)[id]->m_pos.GetY()+m_offset.GetY());
+	m_xf.SetPosZ((*m_points)[id]->m_pos.GetZ()+m_offset.GetZ());
 
 	if(hasnext==true)
 	{
 		DirectionToRotation(tangent,up);
-		_xf.SetRotationFromMatrix3(_matrix);
+		m_xf.SetRotationFromMatrix3(m_matrix);
 	}
 
 	ULONG sub =0;
 
-	if(_subdiv>2)
+	if(m_subdiv>2)
 	{
-		for(ULONG j=0;j<_subdiv;j++)
+		for(ULONG j=0;j<m_subdiv;j++)
 		{
 			if(!closed) sub = 0;
-			else sub =  chainsize * _subdiv;
+			else sub =  chainsize * m_subdiv;
 			
-			ULONG s = (ULONG)_vertices.size();
-			if(j==_subdiv-1)
+			ULONG s = (ULONG)m_vertices.size();
+			if(j==m_subdiv-1)
 			{
-				_polygons.Add(s - _subdiv - _subdiv + 1);
-				_polygons.Add(s - _subdiv + 1-sub);
+				m_polygons.Add(s - m_subdiv - m_subdiv + 1);
+				m_polygons.Add(s - m_subdiv + 1-sub);
 			}
 			else
 			{
-				_polygons.Add(s - _subdiv + 1);
-				_polygons.Add(s + 1 - sub);
+				m_polygons.Add(s - m_subdiv + 1);
+				m_polygons.Add(s + 1 - sub);
 			}
-			_polygons.Add(s-sub);
-			_polygons.Add(s - _subdiv);
+			m_polygons.Add(s-sub);
+			m_polygons.Add(s - m_subdiv);
 
-			_polygons.Add(-2);
-			_nbp+=5;
+			m_polygons.Add(-2);
+			m_nbp+=5;
 
 			//if(!closed)
 			//{
-				_p.MulByTransformation(_section[j],_xf);
+				m_p.MulByTransformation(m_section[j],m_xf);
 				//_vertices.Add(_p);
-				_vertices.push_back(CVector3f((float)_p.GetX(),(float)_p.GetY(),(float)_p.GetZ()));
+				m_vertices.push_back(CVector3f((float)m_p.GetX(),(float)m_p.GetY(),(float)m_p.GetZ()));
 			//}
-			_nbv++;
+			m_nbv++;
 		}
 	}
 	else
 	{
 		if(!closed) sub = 0;
-		else sub = chainsize * _subdiv;
+		else sub = chainsize * m_subdiv;
 		
-		ULONG s = (ULONG)_vertices.size();
-		_polygons.Add(s - _subdiv + 1);
-		_polygons.Add(s + 1 - sub);
-		_polygons.Add(s - sub);
-		_polygons.Add(s - _subdiv);
-		_polygons.Add(-2);
-		_nbp+=5;
+		ULONG s = (ULONG)m_vertices.size();
+		m_polygons.Add(s - m_subdiv + 1);
+		m_polygons.Add(s + 1 - sub);
+		m_polygons.Add(s - sub);
+		m_polygons.Add(s - m_subdiv);
+		m_polygons.Add(-2);
+		m_nbp+=5;
 
 		if(!closed)
 		{
-			_p.MulByTransformation(_section[0],_xf);
-			_vertices.push_back(CVector3f((float)_p.GetX(),(float)_p.GetY(),(float)_p.GetZ()));
-			_p.MulByTransformation(_section[1],_xf);
-			_vertices.push_back(CVector3f((float)_p.GetX(),(float)_p.GetY(),(float)_p.GetZ()));
-			_nbv+=2;
+			m_p.MulByTransformation(m_section[0],m_xf);
+			m_vertices.push_back(CVector3f((float)m_p.GetX(),(float)m_p.GetY(),(float)m_p.GetZ()));
+			m_p.MulByTransformation(m_section[1],m_xf);
+			m_vertices.push_back(CVector3f((float)m_p.GetX(),(float)m_p.GetY(),(float)m_p.GetZ()));
+			m_nbv+=2;
 		}
 	}
 
 	// cap line
-	if(!hasnext && _subdiv>2)
+	if(!hasnext && m_subdiv>2)
 	{
 
 	}
@@ -208,5 +208,5 @@ void TXMesh::DirectionToRotation(CVector3f& in_dir, CVector3f& in_up)
 	v1.NormalizeInPlace();
 	v2.NormalizeInPlace();
 
-	_matrix.Set(v1.GetX(), v1.GetY(), v1.GetZ(), dir.GetX(), dir.GetY(), dir.GetZ(), v2.GetX(), v2.GetY(), v2.GetZ());
+	m_matrix.Set(v1.GetX(), v1.GetY(), v1.GetZ(), dir.GetX(), dir.GetY(), dir.GetZ(), v2.GetX(), v2.GetY(), v2.GetZ());
 }

@@ -1,0 +1,178 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="header">
+      <UniqueIdentifier>{d8d24aac-3825-439f-aef7-9078c7bc7fbe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{fb6afb58-e946-4f4b-9de3-3592a8426390}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ToonixBBox.h">
+      <Filter>header</Filter>
+    </ClInclude>
+    <ClInclude Include="ToonixCamera.h">
+      <Filter>header</Filter>
+    </ClInclude>
+    <ClInclude Include="ToonixCommon.h">
+      <Filter>header</Filter>
+    </ClInclude>
+    <ClInclude Include="ToonixData.h">
+      <Filter>header</Filter>
+    </ClInclude>
+    <ClInclude Include="ToonixGeometry.h">
+      <Filter>header</Filter>
+    </ClInclude>
+    <ClInclude Include="ToonixGL.h">
+      <Filter>header</Filter>
+    </ClInclude>
+    <ClInclude Include="ToonixGLDrawer.h">
+      <Filter>header</Filter>
+    </ClInclude>
+    <ClInclude Include="ToonixGLHair.h">
+      <Filter>header</Filter>
+    </ClInclude>
+    <ClInclude Include="ToonixGLKDTree.h">
+      <Filter>header</Filter>
+    </ClInclude>
+    <ClInclude Include="ToonixGLLine.h">
+      <Filter>header</Filter>
+    </ClInclude>
+    <ClInclude Include="ToonixGLManager.h">
+      <Filter>header</Filter>
+    </ClInclude>
+    <ClInclude Include="ToonixGLShape.h">
+      <Filter>header</Filter>
+    </ClInclude>
+    <ClInclude Include="ToonixGrid3D.h">
+      <Filter>header</Filter>
+    </ClInclude>
+    <ClInclude Include="ToonixKDTree.h">
+      <Filter>header</Filter>
+    </ClInclude>
+    <ClInclude Include="ToonixLight.h">
+      <Filter>header</Filter>
+    </ClInclude>
+    <ClInclude Include="ToonixLine.h">
+      <Filter>header</Filter>
+    </ClInclude>
+    <ClInclude Include="ToonixMesh.h">
+      <Filter>header</Filter>
+    </ClInclude>
+    <ClInclude Include="ToonixRegister.h">
+      <Filter>header</Filter>
+    </ClInclude>
+    <ClInclude Include="ToonixGLSL.h" />
+    <ClInclude Include="gl3w\GL\gl3w.h" />
+    <ClInclude Include="gl3w\GL\glcorearb.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="ToonixBBox.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ToonixBoundary.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ToonixBVH.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ToonixCamera.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ToonixCluster.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ToonixCommon.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ToonixCrease.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ToonixData.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ToonixDualMesh.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ToonixGeometry.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ToonixGetData.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ToonixGL.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ToonixGLDrawer.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ToonixGLKDTree.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ToonixGLLine.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ToonixGLManager.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ToonixGLShape.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ToonixGrid3D.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ToonixHairs.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ToonixIntersection.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ToonixKDTree.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ToonixLight.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ToonixLighter.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ToonixLine.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ToonixLineGet.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ToonixLineMerge.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ToonixLineModify.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ToonixLineSet.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ToonixMesh.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ToonixMesher.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ToonixPass.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ToonixPoints.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ToonixRegister.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ToonixSilhouette.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ToonixStrands.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="gl3w\gl3w.cpp" />
+  </ItemGroup>
+</Project>

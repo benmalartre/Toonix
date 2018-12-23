@@ -147,7 +147,7 @@ SICALLBACK ToonixLighter_BeginEvaluate( ICENodeContext& in_ctxt )
 		ULONG nSizeToonixData;
 		ToonixData.GetData( 0,(const CDataArrayCustomType::TData**)&pBufferToonixData, nSizeToonixData );
 		TXData* data = (TXData*)pBufferToonixData;
-		light->_geom = data->_geom;
+		light->m_geom = data->m_geom;
 
 
 		in_ctxt.PutUserData((CValue::siPtrType)light);
@@ -161,7 +161,7 @@ SICALLBACK ToonixLighter_BeginEvaluate( ICENodeContext& in_ctxt )
 	{
 		//Application().LogMessage(L"Toonix Lighter >State Dirty...");
 		// Get lights positions used for light detection
-		light->_lights.clear();
+		light->m_lights.clear();
 		
 		siICENodeDataType inPortType;
 		siICENodeStructureType inPortStruct;
@@ -172,29 +172,29 @@ SICALLBACK ToonixLighter_BeginEvaluate( ICENodeContext& in_ctxt )
 		{
 			//Application().LogMessage(L"ONE Light");
 			CDataArrayVector3f lightPointData( in_ctxt, ID_IN_LightPosition );
-			light->_lights.push_back(lightPointData[0]);
-			light->_nbl = 1;
+			light->m_lights.push_back(lightPointData[0]);
+			light->m_nbl = 1;
 		}
 		else if ( inPortStruct == XSI::siICENodeStructureArray )
 		{
 			//Application().LogMessage(L"MULTI Lights");
 			CDataArray2DVector3f lightPointsData( in_ctxt, ID_IN_LightPosition );
 			CDataArray2DVector3f::Accessor lightPointData = lightPointsData[0];
-			light->_nbl = lightPointData.GetCount();
+			light->m_nbl = lightPointData.GetCount();
 
-			for(LONG l=0;l<light->_nbl;l++)
+			for(LONG l=0;l<light->m_nbl;l++)
 			{
-				light->_lights.push_back(lightPointData[l]);
+				light->m_lights.push_back(lightPointData[l]);
 			}
 		}
 
-		light->_bias.resize(light->_nbl);
+		light->m_bias.resize(light->m_nbl);
 
 		in_ctxt.GetPortInfo( ID_IN_LightBias, inPortType, inPortStruct, inPortContext );
 		if ( inPortStruct == XSI::siICENodeStructureSingle )
 		{
 			CDataArrayFloat lightBiasData( in_ctxt, ID_IN_LightBias );
-			light->_bias[0] = lightBiasData[0];
+			light->m_bias[0] = lightBiasData[0];
 		}
 		else if ( inPortStruct == XSI::siICENodeStructureArray )
 		{
@@ -202,19 +202,19 @@ SICALLBACK ToonixLighter_BeginEvaluate( ICENodeContext& in_ctxt )
 			CDataArray2DFloat::Accessor lightPointData = lightPointsData[0];
 			ULONG nbl = lightPointData.GetCount();
 
-			for(LONG l=0;l<nbl&&l<light->_nbl;l++)
+			for(LONG l=0;l<nbl&&l<light->m_nbl;l++)
 			{
-				light->_bias[l] = lightPointData[l];
+				light->m_bias[l] = lightPointData[l];
 			}
 		}
 
-		light->_distance.resize(light->_nbl);
+		light->m_distance.resize(light->m_nbl);
 
 		in_ctxt.GetPortInfo( ID_IN_LightDistance, inPortType, inPortStruct, inPortContext );
 		if ( inPortStruct == XSI::siICENodeStructureSingle )
 		{
 			CDataArrayFloat lightDistanceData( in_ctxt, ID_IN_LightDistance );
-			light->_distance[0] = lightDistanceData[0];
+			light->m_distance[0] = lightDistanceData[0];
 		}
 		else if ( inPortStruct == XSI::siICENodeStructureArray )
 		{
@@ -222,19 +222,19 @@ SICALLBACK ToonixLighter_BeginEvaluate( ICENodeContext& in_ctxt )
 			CDataArray2DFloat::Accessor lightDistanceData = lightDistancesData[0];
 			ULONG nbl = lightDistanceData.GetCount();
 
-			for(LONG l=0;l<nbl&&l<light->_nbl;l++)
+			for(LONG l=0;l<nbl&&l<light->m_nbl;l++)
 			{
-				light->_distance[l] = lightDistanceData[l];
+				light->m_distance[l] = lightDistanceData[l];
 			}
 		}
 
 		CDataArrayBool revertData( in_ctxt, ID_IN_Revert );
-		light->_reverse = revertData[0];
+		light->m_reverse = revertData[0];
 		CDataArrayFloat pushData( in_ctxt, ID_IN_Push );
-		light->_push = pushData[0];
+		light->m_push = pushData[0];
 
 		CDataArrayVector3f viewData( in_ctxt, ID_IN_ViewPosition );
-		light->_view = viewData[0];
+		light->m_view = viewData[0];
 
 		light->Build();
 
@@ -258,10 +258,10 @@ SICALLBACK ToonixLighter_Evaluate( ICENodeContext& in_ctxt )
 			// Get the output port array ...			
 			CDataArray2DVector3f outData( in_ctxt );
 
-			CDataArray2DVector3f::Accessor outDataSubArray = outData.Resize(0,light->_nbv);
-			for(ULONG n=0;n<light->_nbv;n++)
+			CDataArray2DVector3f::Accessor outDataSubArray = outData.Resize(0,light->m_nbv);
+			for(ULONG n=0;n<light->m_nbv;n++)
 			{
-				outDataSubArray[n].Set(light->_vertices[n].GetX(),light->_vertices[n].GetY(),light->_vertices[n].GetZ());
+				outDataSubArray[n].Set(light->m_vertices[n].GetX(),light->m_vertices[n].GetY(),light->m_vertices[n].GetZ());
 			}
 			
 		}
@@ -272,10 +272,10 @@ SICALLBACK ToonixLighter_Evaluate( ICENodeContext& in_ctxt )
 			// Get the output port array ...			
 			CDataArray2DLong outData( in_ctxt );	
 
-			CDataArray2DLong::Accessor outDataSubArray = outData.Resize(0,light->_nbp);
-			for(ULONG n=0;n<light->_nbp;n++)
+			CDataArray2DLong::Accessor outDataSubArray = outData.Resize(0,light->m_nbp);
+			for(ULONG n=0;n<light->m_nbp;n++)
 			{
-				outDataSubArray[n] = light->_polygons[n];
+				outDataSubArray[n] = light->m_polygons[n];
 			}
 		}
 		break;

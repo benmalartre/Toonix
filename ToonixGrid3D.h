@@ -10,14 +10,14 @@
 // ray class
 class TXRay {
 public:
-  TXRay(const CVector3f& s, const CVector3f& d) : _start(s), _end(d), _p(-1) { };
+  TXRay(const CVector3f& s, const CVector3f& d) : m_start(s), m_end(d), m_p(-1) { };
 
   // start position and end position
-  CVector3f _start, _end;
+  CVector3f m_start, m_end;
 
   // if intersect with mesh, the intersection will be (1-p)*start + p*end
   // else p = -1
-  double _p;
+  double m_p;
 };
 
 class TXGridTriangle{
@@ -25,36 +25,36 @@ public:
 	TXGridTriangle(TXTriangle* tp);
 
 	const CVector3f& GetPos(ULONG id) const
-	{ return _t->_v[id]->_pos;};
+	{ return m_t->m_v[id]->m_pos;};
 
 	// original triangle
-	TXTriangle* _t;
+	TXTriangle* m_t;
 
 	// face normal and edge normal (point inside of the triangle)
-	CVector3f _n, _en1, _en2, _en3;
+	CVector3f m_n, m_en1, m_en2, m_en3;
 };
 
 class TXGrid3D {
 public:
-  TXGrid3D() : _size(0), _xstep(0), _ystep(0), _zstep(0),
-	     _min(0,0,0), _max(0,0,0), _grid(0) { };
-  TXGrid3D(int s) : _size(0), _xstep(0), _ystep(0), _zstep(0),
-		  _min(0,0,0), _max(0,0,0), _grid(0)
+  TXGrid3D() : m_size(0), m_xstep(0), m_ystep(0), m_zstep(0),
+	     m_min(0,0,0), m_max(0,0,0), m_grid(0) { };
+  TXGrid3D(int s) : m_size(0), m_xstep(0), m_ystep(0), m_zstep(0),
+		  m_min(0,0,0), m_max(0,0,0), m_grid(0)
   { if (s>0) CreateGrid(s); };
   ~TXGrid3D();
 
   // member accessors
-  int size() const { return _size; };
-  double xstep() const { return _xstep; };
-  double ystep() const { return _ystep; };
-  double zstep() const { return _zstep; };
-  CVector3f& minp() { return _min; };
-  CVector3f& maxp() { return _max; };
-  const CVector3f& minp() const { return _min; };
-  const CVector3f& maxp() const { return _max; };
-  std::vector<TXRay>& rays() { return _rays; };
+  int size() const { return m_size; };
+  double xstep() const { return m_xstep; };
+  double ystep() const { return m_ystep; };
+  double zstep() const { return m_zstep; };
+  CVector3f& minp() { return m_min; };
+  CVector3f& maxp() { return m_max; };
+  const CVector3f& minp() const { return m_min; };
+  const CVector3f& maxp() const { return m_max; };
+  std::vector<TXRay>& rays() { return m_rays; };
   // clear all rays
-  void ClearRays() { _rays.clear(); };
+  void ClearRays() { m_rays.clear(); };
 
   // place a triangle mesh in the grid
   void PlaceIntoGrid(TXGeometry *geom);
@@ -63,15 +63,15 @@ public:
 
 private:
   // grid size
-  int _size;
+  int m_size;
   // cell length in x, y, z directions
-  double _xstep, _ystep, _zstep;
+  double m_xstep, m_ystep, m_zstep;
   // bounding box of the mesh
-  CVector3f _min, _max;
+  CVector3f m_min, m_max;
   // rays tested for intersection
-  std::vector<TXRay> _rays;
+  std::vector<TXRay> m_rays;
   // cells
-  std::vector<TXGridTriangle*> *** _grid;
+  std::vector<TXGridTriangle*> *** m_grid;
 
   // allocate proper space for a grid of size s, free old
   void CreateGrid(int s);

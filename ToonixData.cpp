@@ -7,58 +7,62 @@
 
 TXData::TXData()
 {
-	_geom = new TXGeometry();
+	m_geom = new TXGeometry();
 	/*_grid = new TXGrid3D();
 	_octree = new TXOctree();*/
-	_camera = new TXCamera();
+	m_camera = new TXCamera();
 };
 
 TXData::~TXData()
 {
-	delete _camera;
+	delete m_camera;
 	/*delete _octree;
 	delete _grid;*/
-	delete _geom;
+	delete m_geom;
 }
+
 
 void TXData::Update(CICEGeometry& geom)
 {
-	_geom->GetPointPosition(geom);
+	m_geom->GetPointPosition(geom);
 	//_useoctree = false;
-	_geom->GetRuntimeMeshData(geom);
+	m_geom->GetRuntimeMeshData(geom);
 	GetVisibilityData();
 }
 
 void TXData::Update(CICEGeometry& geom, bool useoctree)
 {
-	_geom->GetPointPosition(geom);
+	m_geom->GetPointPosition(geom);
+	
 	/*
 	_useoctree = useoctree;
 	if(_useoctree)
 	{
-		_octree->BuildTree(_geom);
-		Application().LogMessage(L"Octree size : "+(CString)_octree->GetSize());
+		_dualmesh = TXOctree::BuildTree(_geom);
+		//_octree->BuildTree(_geom);
+		Application().LogMessage(L"Octree size : "+(CString)_dualmesh->GetSize());
 	}
 	*/
-	_geom->GetRuntimeMeshData(geom);
+	
+	m_geom->GetRuntimeMeshData(geom);
 	GetVisibilityData();
-	_drawer.SetCamera(_camera);
-	_drawer.SetGeometry(_geom);
+	//_drawer.SetCamera(_camera);
+	//_drawer.SetGeometry(_geom);
 }
 
 void TXData::GetVisibilityData()
 {
-	_geom->_view = _camera->_pos;
+	m_geom->m_view = m_camera->m_pos;
 
-	if(!_culledges)
+	if(!m_culledges)
 	{
-		_geom->SetAllVisible();
+		m_geom->SetAllVisible();
 		return;
 	}
 
 	else
 	{
-		_geom->GetVisible(_camera);
+		m_geom->GetVisible(m_camera);
 	}
 	/*
 	if(_useoctree)
