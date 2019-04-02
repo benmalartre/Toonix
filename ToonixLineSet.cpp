@@ -182,20 +182,22 @@ SICALLBACK ToonixLineSet_Evaluate( ICENodeContext& in_ctxt )
 				pnt->m_radius = aRadius[n];
 				pnt->m_lineid = aLineID[n];
 				pnt->m_sublineid = aSublineID[n];
-				pnt->m_color = aColor[n];
-				chain->AddPoint(pnt);
+				//pnt->m_color = aColor[n];
 
-				if(currentline != pnt->m_lineid && currentsubline != pnt->m_sublineid)
+				if(currentline != pnt->m_lineid || currentsubline != pnt->m_sublineid)
 				{
 					line->m_chains.push_back(chain);
 					chain = new TXChain();
-					
 				}
-				
 				currentline = pnt->m_lineid;
 				currentsubline = pnt->m_sublineid;
+
+				chain->AddPoint(pnt);
 			}
+			// add last chain
 			line->m_chains.push_back(chain);
+
+			//Application().LogMessage("NUM CHAINS : "+CString())
 
 			// Get the output port array ...			
 			CDataArrayCustomType outData( in_ctxt );

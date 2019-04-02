@@ -169,6 +169,7 @@
     <ClCompile Include="ToonixCluster.cpp" />
     <ClCompile Include="ToonixCommon.cpp" />
     <ClCompile Include="ToonixCrease.cpp" />
+    <ClCompile Include="ToonixCurve.cpp" />
     <ClCompile Include="ToonixData.cpp" />
     <ClCompile Include="ToonixDualMesh.cpp" />
     <ClCompile Include="ToonixGeometry.cpp" />

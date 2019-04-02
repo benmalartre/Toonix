@@ -1,6 +1,7 @@
 //Toonix Line Modifier
 //------------------------------------------------
 #include "ToonixRegister.h"
+#include "ToonixCommon.h"
 #include "ToonixData.h"
 #include "ToonixLine.h"
 
@@ -29,8 +30,8 @@ CStatus RegisterToonixLineModify( PluginRegistrar& in_reg )
 	st = nodeDef.PutColor(ToonixNodeR,ToonixNodeG,ToonixNodeB);
 	st.AssertSucceeded() ;
 
-	st = nodeDef.PutThreadingModel(siICENodeSingleThreading);
-	st.AssertSucceeded( ) ;
+	//st = nodeDef.PutThreadingModel(siICENodeSingleThreading);
+	//st.AssertSucceeded( ) ;
 
 	// Define the ToonLineData custom type.
 	st = nodeDef.DefineCustomType(	L"ToonixLine",L"ToonixLine", L"ToonixLine",ToonixLineR,ToonixLineG, ToonixLineB);
@@ -63,24 +64,6 @@ CStatus RegisterToonixLineModify( PluginRegistrar& in_reg )
 	return CStatus::OK;
 }
 
-bool ToonixLineModify_IsInputArray(ICENodeContext& in_ctxt,ULONG in_portID)
-{
-	siICENodeDataType inPortType;
-	siICENodeStructureType inPortStruct;
-	siICENodeContextType inPortContext;
-
-	in_ctxt.GetPortInfo( in_portID, inPortType, inPortStruct, inPortContext );
-	if ( inPortStruct == XSI::siICENodeStructureSingle )
-	{
-		return false;
-	}
-	else if ( inPortStruct == XSI::siICENodeStructureArray )
-	{
-		return true;
-	}
-	return false;
-}
-
 SICALLBACK ToonixLineModify_Evaluate( ICENodeContext& in_ctxt )
 {
 	// Get the input TXLine
@@ -103,39 +86,32 @@ SICALLBACK ToonixLineModify_Evaluate( ICENodeContext& in_ctxt )
 	CDataArray2DColor4f::Accessor aColor;
 
 	// Get Color Data
-	c2d = ToonixLineModify_IsInputArray(in_ctxt,ID_IN_Color);
+	c2d = IsInputArray(in_ctxt,ID_IN_Color);
 	
 	if(c2d)
 	{
 		CDataArray2DColor4f inColor( in_ctxt, ID_IN_Color );
 		aColor = inColor[0];
 		maxc = aColor.GetCount();
-		Application().LogMessage(L"Input Color IS 2D, Max : "+(CString)maxc);
-
 	}
-	else Application().LogMessage(L"Input Color NOT 2D");
 
 	// Get Radius Data
-	r2d = ToonixLineModify_IsInputArray(in_ctxt,ID_IN_Radius);
+	r2d = IsInputArray(in_ctxt,ID_IN_Radius);
 	if(r2d)
 	{
 		CDataArray2DFloat inRadius( in_ctxt, ID_IN_Radius );
 		aRadius = inRadius[0];
 		maxr = aRadius.GetCount();
-		Application().LogMessage(L"Input Radius IS 2D, Max : "+(CString)maxr);
 	}
-	else Application().LogMessage(L"Input Radius NOT 2D");
 
 	// Get Position Data
-	p2d = ToonixLineModify_IsInputArray(in_ctxt,ID_IN_Position);
+	p2d = IsInputArray(in_ctxt,ID_IN_Position);
 	if(p2d)
 	{
 		CDataArray2DVector3f inPosition( in_ctxt, ID_IN_Position );
 		aPosition = inPosition[0];
 		maxp = aPosition.GetCount();
-		Application().LogMessage(L"Input Position IS 2D, Max : "+(CString)maxp);
 	}
-	else Application().LogMessage(L"Input Position NOT 2D");
 	
 
 	ULONG n =0;
@@ -148,10 +124,9 @@ SICALLBACK ToonixLineModify_Evaluate( ICENodeContext& in_ctxt )
 		chain = line->m_chains[c];
 		for(ULONG p=0;p<chain->m_points.size();p++)
 		{
-			
 			point = chain->m_points[p];
 			if(p2d && n<maxp)point->m_pos = aPosition[n];
-			if(r2d && n<maxr)point->m_radius = aRadius[n];
+			if (r2d && n < maxr)point->m_radius = aRadius[n];
 			if(c2d && n<maxc)point->m_color = aColor[n];
 			n++;
 		}

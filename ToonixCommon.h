@@ -52,3 +52,21 @@ inline void RotateVector(CVector3f& v, const CQuaternionf& quat)
 	v.Set(resQuat.GetX(),resQuat.GetY(),resQuat.GetZ());
 	v.SetLength(len);
 }
+
+inline bool IsInputArray(ICENodeContext& in_ctxt, ULONG in_portID)
+{
+	siICENodeDataType inPortType;
+	siICENodeStructureType inPortStruct;
+	siICENodeContextType inPortContext;
+
+	in_ctxt.GetPortInfo(in_portID, inPortType, inPortStruct, inPortContext);
+	if (inPortStruct == XSI::siICENodeStructureSingle)
+	{
+		return false;
+	}
+	else if (inPortStruct == XSI::siICENodeStructureArray)
+	{
+		return true;
+	}
+	return false;
+}

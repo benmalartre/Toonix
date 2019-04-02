@@ -13,6 +13,7 @@ class TXVertex;
 class TXEdge;
 class TXTriangle;
 class TXPolygon;
+class TXCurve;
 class TXCamera;
 
 static LONG INTERSECTION = -4;
@@ -108,6 +109,30 @@ public:
 	bool _lit;
 };
 
+// TXUVCoord Class
+// A struct representing a 2-dimensional uv coordinate
+//------------------------------------
+struct TXUVCoord
+{
+	float m_u;
+	float m_v;
+
+	TXUVCoord(float in_u = 0, float in_v = 0)
+	{
+		m_u = in_u;
+		m_v = in_v;
+	}
+
+	bool IsOnTriangle()
+	{
+		return (m_u >= 0.0f) && (m_v >= 0.0f) && (m_u + m_v <= 1.0f);
+	}
+	bool IsInsideTriangle()
+	{
+		return (m_u > 0.0f) && (m_v > 0.0f) && (m_u + m_v < 1.0f);
+	}
+};
+
 // TXTriangle Class
 //------------------------------------
 class TXTriangle
@@ -123,29 +148,9 @@ public:
 	bool m_facing;
 	bool IsVisible();
 
-	/// A struct representing a 2-dimensional uv coordinate
-	struct uvCoord
-	{
-		float m_u;
-		float m_v;
+	
 
-		uvCoord(float in_u = 0,float in_v = 0)
-		{
-			m_u = in_u;
-			m_v = in_v;
-		}
-
-		bool IsOnTriangle()
-		{
-			return (m_u >= 0.0f) && (m_v >= 0.0f) && (m_u + m_v <= 1.0f);
-		}
-		bool IsInsideTriangle()
-		{
-			return (m_u > 0.0f) && (m_v > 0.0f) && (m_u + m_v < 1.0f);
-		}
-	};
-
-	virtual uvCoord GetUVFromPoint(const CVector3f & in_pos);
+	virtual TXUVCoord GetUVFromPoint(const CVector3f & in_pos);
 };
 
 // TXPolygon Class
@@ -161,6 +166,36 @@ public:
 
 	std::vector<TXEdge*> m_edges;
 	void PushEdgeData(TXEdge*& edge);
+};
+
+// TXCurve Class
+//------------------------------------
+class TXCurve
+{
+public:
+	TXCurve(LONG id, CVector3f* positions, LONG numPoints);
+	~TXCurve();
+
+	void SetVisible(bool visible) { m_visible = visible; };
+	bool IsVisible() { return m_visible; };
+	bool IsInCell(const CVector3f& min, const CVector3f& max);
+
+	LONG m_id;
+	std::vector<TXEdge*> m_edges;
+	std::vector<TXTriangle*> m_triangles;
+	bool m_isboundary;
+	bool m_iscrease;
+
+	float m_dot;
+	LONG m_sign;
+
+	CVector3f m_pos;
+	CVector3f m_norm;
+
+	//void IsVisible(TXCamera* cam);
+	bool m_visible;
+
+	bool m_lit;
 };
 
 

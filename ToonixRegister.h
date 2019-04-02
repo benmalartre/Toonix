@@ -117,7 +117,7 @@ template <typename T> int sign(T val) {
 #define F32_EPS 1e-6
 
 #define LOG(msg) Application().LogMessage(CString(msg));
-
+#define LOGWITHSEVERITY(msg, severity) Application().LogMessage(CString(msg), severity);
 
 #endif // TOONIX_REGISTER_H
 

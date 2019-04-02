@@ -167,7 +167,6 @@ XSIPLUGINCALLBACK CStatus ToonixGetData_BeginEvaluate( ICENodeContext& in_ctxt )
 	if(dirtyState == 1)
 	{
 		bool bTopologyDirtyState = geom.IsDirty( CICEGeometry::siTopologyDirtyState );
-		//Application().LogMessage(L"Topology Dirty STate : "+(CString)bTopologyDirtyState);
 		geom.ClearState();
 
 		data->Init(geom, bTopologyDirtyState);

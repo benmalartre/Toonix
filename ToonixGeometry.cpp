@@ -1167,7 +1167,7 @@ bool TXEdge::IntersectWithTriangle(TXTriangle* in_triangle)
 	else return false;
 
 	// Get UV from Point
-	TXTriangle::uvCoord uv = in_triangle->GetUVFromPoint(intersection);
+	TXUVCoord uv = in_triangle->GetUVFromPoint(intersection);
 	//Application().LogMessage(L"UV : "+(CString)uv._u+L","+(CString)uv._v);
    if(!uv.IsOnTriangle())
 	  return false;
@@ -1193,7 +1193,7 @@ bool TXTriangle::IsVisible()
 	return false;
 }
 
-TXTriangle::uvCoord TXTriangle::GetUVFromPoint(const CVector3f & in_pos)
+TXUVCoord TXTriangle::GetUVFromPoint(const CVector3f & in_pos)
 {
    // Compute vectors
    CVector3f v0,v1,v2;
@@ -1212,7 +1212,7 @@ TXTriangle::uvCoord TXTriangle::GetUVFromPoint(const CVector3f & in_pos)
    float invDenom = 1.0f / (dot00 * dot11 - dot01 * dot01);
 
    // pack into struct
-   uvCoord uv;
+   TXUVCoord uv;
    uv.m_u = (dot11 * dot02 - dot01 * dot12) * invDenom;
    uv.m_v = (dot00 * dot12 - dot01 * dot02) * invDenom;
    return uv;

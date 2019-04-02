@@ -301,7 +301,6 @@ void TXOctree::FindSilhouettes(const CVector3f& n, float d, std::vector<TXEdge*>
 // build octree
 TXOctree* TXOctree::BuildTree(TXGeometry *geo) 
 {
-	Application().LogMessage(L"Buil Tree Called!!!");
 	TXOctree* tree = new TXOctree[8];
 
 	// loop over all edges, insert all leaves to the tree
