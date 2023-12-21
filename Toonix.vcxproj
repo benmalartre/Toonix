@@ -25,25 +25,25 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
@@ -137,68 +137,51 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="gl3w\GL\gl3w.h" />
-    <ClInclude Include="gl3w\GL\glcorearb.h" />
-    <ClInclude Include="ToonixBBox.h" />
-    <ClInclude Include="ToonixCamera.h" />
-    <ClInclude Include="ToonixCommon.h" />
-    <ClInclude Include="ToonixData.h" />
-    <ClInclude Include="ToonixGeometry.h" />
-    <ClInclude Include="ToonixGL.h" />
-    <ClInclude Include="ToonixGLDrawer.h" />
-    <ClInclude Include="ToonixGLHair.h" />
-    <ClInclude Include="ToonixGLKDTree.h" />
-    <ClInclude Include="ToonixGLLine.h" />
-    <ClInclude Include="ToonixGLManager.h" />
-    <ClInclude Include="ToonixGLShape.h" />
-    <ClInclude Include="ToonixGLSL.h" />
-    <ClInclude Include="ToonixGrid3D.h" />
-    <ClInclude Include="ToonixKDTree.h" />
-    <ClInclude Include="ToonixLight.h" />
-    <ClInclude Include="ToonixLine.h" />
-    <ClInclude Include="ToonixMesh.h" />
-    <ClInclude Include="ToonixRegister.h" />
-    <ClInclude Include="ToonixUtils.h" />
+    <ClInclude Include="BBox.h" />
+    <ClInclude Include="Camera.h" />
+    <ClInclude Include="Common.h" />
+    <ClInclude Include="Data.h" />
+    <ClInclude Include="Geometry.h" />
+    <ClInclude Include="Grid3D.h" />
+    <ClInclude Include="KDTree.h" />
+    <ClInclude Include="Light.h" />
+    <ClInclude Include="Line.h" />
+    <ClInclude Include="Mesh.h" />
+    <ClInclude Include="Register.h" />
+    <ClInclude Include="DualMesh.h" />
+    <ClInclude Include="Utils.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="gl3w\gl3w.cpp" />
-    <ClCompile Include="ToonixBBox.cpp" />
-    <ClCompile Include="ToonixBoundary.cpp" />
-    <ClCompile Include="ToonixBVH.cpp" />
-    <ClCompile Include="ToonixCamera.cpp" />
-    <ClCompile Include="ToonixCluster.cpp" />
-    <ClCompile Include="ToonixCommon.cpp" />
-    <ClCompile Include="ToonixCrease.cpp" />
-    <ClCompile Include="ToonixCurve.cpp" />
-    <ClCompile Include="ToonixData.cpp" />
-    <ClCompile Include="ToonixDualMesh.cpp" />
-    <ClCompile Include="ToonixGeometry.cpp" />
-    <ClCompile Include="ToonixGetData.cpp" />
-    <ClCompile Include="ToonixGL.cpp" />
-    <ClCompile Include="ToonixGLDrawer.cpp" />
-    <ClCompile Include="ToonixGLKDTree.cpp" />
-    <ClCompile Include="ToonixGLLine.cpp" />
-    <ClCompile Include="ToonixGLManager.cpp" />
-    <ClCompile Include="ToonixGLShape.cpp" />
-    <ClCompile Include="ToonixGrid3D.cpp" />
-    <ClCompile Include="ToonixHairs.cpp" />
-    <ClCompile Include="ToonixIntersection.cpp" />
-    <ClCompile Include="ToonixKDTree.cpp" />
-    <ClCompile Include="ToonixLight.cpp" />
-    <ClCompile Include="ToonixLighter.cpp" />
-    <ClCompile Include="ToonixLine.cpp" />
-    <ClCompile Include="ToonixLineGet.cpp" />
-    <ClCompile Include="ToonixLineMerge.cpp" />
-    <ClCompile Include="ToonixLineModify.cpp" />
-    <ClCompile Include="ToonixLineSet.cpp" />
-    <ClCompile Include="ToonixMesh.cpp" />
-    <ClCompile Include="ToonixMesher.cpp" />
-    <ClCompile Include="ToonixPass.cpp" />
-    <ClCompile Include="ToonixPoints.cpp" />
-    <ClCompile Include="ToonixRegister.cpp" />
-    <ClCompile Include="ToonixSilhouette.cpp" />
-    <ClCompile Include="ToonixStrands.cpp" />
-    <ClCompile Include="ToonixUtils.cpp" />
+    <ClCompile Include="BBox.cpp" />
+    <ClCompile Include="Boundary.cpp" />
+    <ClCompile Include="BVH.cpp" />
+    <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="Cluster.cpp" />
+    <ClCompile Include="Common.cpp" />
+    <ClCompile Include="Crease.cpp" />
+    <ClCompile Include="Curve.cpp" />
+    <ClCompile Include="Data.cpp" />
+    <ClCompile Include="DualMesh.cpp" />
+    <ClCompile Include="Geometry.cpp" />
+    <ClCompile Include="GetData.cpp" />
+    <ClCompile Include="Grid3D.cpp" />
+    <ClCompile Include="Hairs.cpp" />
+    <ClCompile Include="Intersection.cpp" />
+    <ClCompile Include="KDTree.cpp" />
+    <ClCompile Include="Light.cpp" />
+    <ClCompile Include="Lighter.cpp" />
+    <ClCompile Include="Line.cpp" />
+    <ClCompile Include="LineGet.cpp" />
+    <ClCompile Include="LineMerge.cpp" />
+    <ClCompile Include="LineModify.cpp" />
+    <ClCompile Include="LineSet.cpp" />
+    <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="Mesher.cpp" />
+    <ClCompile Include="Points.cpp" />
+    <ClCompile Include="Register.cpp" />
+    <ClCompile Include="Silhouette.cpp" />
+    <ClCompile Include="Strands.cpp" />
+    <ClCompile Include="Utils.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
